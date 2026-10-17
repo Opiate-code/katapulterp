@@ -16,7 +16,11 @@ const auditIconConfig: Record<RecentAuditItem['type'], { icon: React.FC<{ classN
   account: { icon: Building, bg: 'bg-violet-50', text: 'text-violet-600' }
 };
 
-export const BottomWidgets: React.FC = () => {
+interface BottomWidgetsProps {
+  onNavigate?: (nav: string) => void;
+}
+
+export const BottomWidgets: React.FC<BottomWidgetsProps> = ({ onNavigate }) => {
   // SVG Donut chart calculations
   const size = 120;
   const strokeWidth = 18;
@@ -31,7 +35,10 @@ export const BottomWidgets: React.FC = () => {
       <div className="bg-white rounded-xl border border-slate-200/80 p-3.5 shadow-2xs flex flex-col justify-between">
         <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 mb-1">
           <h3 className="text-xs font-bold text-slate-900">Actividad reciente</h3>
-          <button className="text-[10px] font-semibold text-blue-600 hover:text-blue-700 cursor-pointer">
+          <button
+            onClick={() => onNavigate?.('actividades')}
+            className="text-[10px] font-semibold text-blue-600 hover:text-blue-700 cursor-pointer transition-colors"
+          >
             Ver todas
           </button>
         </div>

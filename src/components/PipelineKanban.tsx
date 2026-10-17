@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, Clock } from 'lucide-react';
+import { ArrowRight, Clock } from 'lucide-react';
 import { PIPELINE_STAGES, INITIAL_OPPORTUNITIES, OpportunityItem } from '../data/crmData';
 
 const stageCounts: Record<string, { count: number; more: number }> = {
@@ -10,7 +10,11 @@ const stageCounts: Record<string, { count: number; more: number }> = {
   cerradas: { count: 3, more: 0 }
 };
 
-export const PipelineKanban: React.FC = () => {
+interface PipelineKanbanProps {
+  onNavigate?: (nav: string) => void;
+}
+
+export const PipelineKanban: React.FC<PipelineKanbanProps> = ({ onNavigate }) => {
   const [opportunities, setOpportunities] = useState<OpportunityItem[]>(INITIAL_OPPORTUNITIES);
   const [selectedOpp, setSelectedOpp] = useState<OpportunityItem | null>(null);
 
@@ -35,9 +39,13 @@ export const PipelineKanban: React.FC = () => {
           Pipeline de oportunidades
         </h2>
 
-        <button className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer">
+        <button
+          onClick={() => onNavigate?.('oportunidades')}
+          className="text-[11px] font-semibold text-slate-500 hover:text-[#E11D48] flex items-center gap-1 cursor-pointer transition-colors"
+          title="Ver todas las oportunidades en el módulo"
+        >
           <span>Ver todas</span>
-          <ChevronDown className="w-3 h-3 text-slate-400" />
+          <ArrowRight className="w-3 h-3 text-slate-400 group-hover:text-[#E11D48]" />
         </button>
       </div>
 
@@ -93,9 +101,13 @@ export const PipelineKanban: React.FC = () => {
 
               {/* More counter at bottom */}
               {meta.more > 0 ? (
-                <div className="text-center pt-1.5 pb-0.5 text-[9px] font-semibold text-slate-400 hover:text-slate-600 cursor-pointer">
+                <button
+                  onClick={() => onNavigate?.('oportunidades')}
+                  className="w-full text-center pt-1.5 pb-0.5 text-[9px] font-bold text-slate-400 hover:text-[#E11D48] cursor-pointer transition-colors block"
+                  title={`Ver las ${meta.more} oportunidades adicionales de ${stage.name} en el módulo`}
+                >
                   + {meta.more} más
-                </div>
+                </button>
               ) : (
                 <div className="py-1"></div>
               )}

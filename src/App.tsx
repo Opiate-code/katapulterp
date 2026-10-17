@@ -77,10 +77,10 @@ export function App() {
               <MetricCards />
 
               {/* Pipeline Kanban */}
-              <PipelineKanban />
+              <PipelineKanban onNavigate={(nav) => setActiveNav(nav)} />
 
               {/* Bottom Widgets: Actividad reciente + Resumen por fuente */}
-              <BottomWidgets />
+              <BottomWidgets onNavigate={(nav) => setActiveNav(nav)} />
             </section>
 
             {/* Right Section (~25% width) */}

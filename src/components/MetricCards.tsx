@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Building2, Target, DollarSign, ArrowUp, ChevronRight } from 'lucide-react';
+import { Users, Building2, Target, DollarSign, ArrowUp } from 'lucide-react';
 import { METRICS_DATA, MetricItem } from '../data/crmData';
 
 const iconMap: Record<string, React.FC<{ className?: string }>> = {
@@ -20,13 +20,12 @@ export const MetricCards: React.FC = () => {
             key={metric.id}
             className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between"
           >
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="mb-1.5">
               <div
                 className={`w-7 h-7 rounded-lg flex items-center justify-center ${metric.color}`}
               >
                 <IconComponent className="w-3.5 h-3.5" />
               </div>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
             </div>
 
             <div className="space-y-0.5">
