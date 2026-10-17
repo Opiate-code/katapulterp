@@ -76,9 +76,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeNav, onSelectNav }) => {
       <div className="p-3 border-t border-[#1E293B]">
         <button
           onClick={() => onSelectNav('configuracion')}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-[#94A3B8] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeNav === 'configuracion'
+              ? 'bg-[#17233E] text-white shadow-xs font-bold'
+              : 'text-[#94A3B8] hover:text-white hover:bg-white/5'
+          }`}
         >
-          <Settings className="w-3.5 h-3.5 text-[#64748B]" />
+          <Settings className={`w-3.5 h-3.5 ${activeNav === 'configuracion' ? 'text-[#E11D48]' : 'text-[#64748B]'}`} />
           <span>Configuración</span>
         </button>
       </div>

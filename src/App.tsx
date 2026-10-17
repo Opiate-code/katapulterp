@@ -11,6 +11,7 @@ import { OpportunitiesModule } from './components/OpportunitiesModule';
 import { ActivitiesModule } from './components/ActivitiesModule';
 import { ReportsModule } from './components/ReportsModule';
 import { IntegrationsModule } from './components/IntegrationsModule';
+import { SettingsModule } from './components/SettingsModule';
 import { Menu, X, ArrowLeft, Construction } from 'lucide-react';
 
 export function App() {
@@ -114,6 +115,9 @@ export function App() {
         {/* Integrations Module View */}
         {activeNav === 'integraciones' && <IntegrationsModule />}
 
+        {/* Settings Module View */}
+        {activeNav === 'configuracion' && <SettingsModule />}
+
         {/* Modules in Queue / Work In Progress Placeholders */}
         {activeNav !== 'inicio' &&
           activeNav !== 'contactos' &&
@@ -121,7 +125,8 @@ export function App() {
           activeNav !== 'oportunidades' &&
           activeNav !== 'actividades' &&
           activeNav !== 'reportes' &&
-          activeNav !== 'integraciones' && (
+          activeNav !== 'integraciones' &&
+          activeNav !== 'configuracion' && (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50/50">
             <div className="w-14 h-14 rounded-2xl bg-rose-50 text-[#E11D48] flex items-center justify-center mb-3">
               <Construction className="w-7 h-7" />
