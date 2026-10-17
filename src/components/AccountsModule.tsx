@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Building2,
   Users,
@@ -38,7 +38,8 @@ import {
   Camera,
   Folder,
   ArrowRight,
-  Trash2
+  Trash2,
+  Image as ImageIcon
 } from 'lucide-react';
 import {
   Account,
@@ -73,6 +74,12 @@ export const AccountsModule: React.FC = () => {
   // Document Repository Filters
   const [docCategoryFilter, setDocCategoryFilter] = useState<string>('all');
   const [docSearchQuery, setDocSearchQuery] = useState<string>('');
+
+  // Allowed document formats: PDF, JPEG, PNG, Word (.doc, .docx), Excel (.xls, .xlsx)
+  const ALLOWED_DOC_EXTENSIONS = useMemo(() => ['pdf', 'jpeg', 'jpg', 'png', 'doc', 'docx', 'xls', 'xlsx'], []);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedFilePreview, setUploadedFilePreview] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // New Account Form State
   const [formData, setFormData] = useState({
@@ -114,11 +121,18 @@ export const AccountsModule: React.FC = () => {
   });
 
   // New Document Form State
-  const [documentForm, setDocumentForm] = useState({
+  const [documentForm, setDocumentForm] = useState<{
+    name: string;
+    category: AccountDocument['category'];
+    size: string;
+    fileType: AccountDocument['fileType'];
+    url?: string;
+  }>({
     name: '',
-    category: 'Contrato' as AccountDocument['category'],
+    category: 'Contrato',
     size: '1.5 MB',
-    fileType: 'pdf' as AccountDocument['fileType']
+    fileType: 'pdf',
+    url: undefined
   });
 
   // Calculate Indicator KPIs
@@ -335,19 +349,73 @@ export const AccountsModule: React.FC = () => {
     });
   };
 
+  // Handle File Selection and Format Validation
+  const handleFileSelected = (file: File) => {
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    if (!ALLOWED_DOC_EXTENSIONS.includes(ext)) {
+      setUploadError('Formato no permitido. Solo se aceptan archivos PDF (.pdf), imágenes JPEG (.jpg, .jpeg), PNG (.png), Word (.doc, .docx) y Excel (.xls, .xlsx).');
+      return;
+    }
+
+    setUploadError(null);
+    const sizeStr = file.size >= 1048576
+      ? `${(file.size / 1048576).toFixed(1)} MB`
+      : `${Math.max(1, Math.round(file.size / 1024))} KB`;
+
+    let detectedType: AccountDocument['fileType'] = 'pdf';
+    if (ext === 'jpg' || ext === 'jpeg') detectedType = 'jpeg';
+    else if (ext === 'png') detectedType = 'png';
+    else if (ext === 'doc') detectedType = 'doc';
+    else if (ext === 'docx') detectedType = 'docx';
+    else if (ext === 'xls') detectedType = 'xls';
+    else if (ext === 'xlsx') detectedType = 'xlsx';
+    else detectedType = 'pdf';
+
+    setDocumentForm((prev) => ({
+      ...prev,
+      name: file.name,
+      size: sizeStr,
+      fileType: detectedType
+    }));
+
+    if (['jpg', 'jpeg', 'png'].includes(ext)) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setUploadedFilePreview(ev.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setUploadedFilePreview(null);
+    }
+  };
+
   // Handle Add Document to Account
   const handleAddDocument = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!documentForm.name || !selectedAccount) return;
+    if (!documentForm.name.trim() || !selectedAccount) return;
+
+    const parts = documentForm.name.trim().split('.');
+    const ext = parts.length > 1 ? parts.pop()?.toLowerCase() || '' : '';
+    let finalName = documentForm.name.trim();
+
+    if (ext) {
+      if (!ALLOWED_DOC_EXTENSIONS.includes(ext)) {
+        setUploadError('Formato no permitido. Solo se aceptan archivos PDF, JPEG, PNG, Word y Excel.');
+        return;
+      }
+    } else {
+      finalName = `${finalName}.${documentForm.fileType}`;
+    }
 
     const newDoc: AccountDocument = {
       id: `doc-${Date.now()}`,
-      name: documentForm.name.endsWith('.pdf') ? documentForm.name : `${documentForm.name}.${documentForm.fileType}`,
+      name: finalName,
       category: documentForm.category,
       size: documentForm.size || '1.2 MB',
       uploadedAt: 'Hoy',
       uploadedBy: 'Ana Torres',
-      fileType: documentForm.fileType
+      fileType: documentForm.fileType,
+      url: uploadedFilePreview || undefined
     };
 
     const newActivity: AccountActivityItem = {
@@ -355,7 +423,7 @@ export const AccountsModule: React.FC = () => {
       date: 'Hoy',
       type: 'contract',
       title: `Documento adjunto: ${newDoc.name}`,
-      description: `Archivo ${newDoc.category} subido al expediente comercial.`,
+      description: `Archivo ${newDoc.category} (${newDoc.fileType.toUpperCase()}) subido al expediente comercial.`,
       user: 'Ana Torres'
     };
 
@@ -372,11 +440,14 @@ export const AccountsModule: React.FC = () => {
     );
 
     setIsAddDocumentModalOpen(false);
+    setUploadedFilePreview(null);
+    setUploadError(null);
     setDocumentForm({
       name: '',
       category: 'Contrato',
       size: '1.5 MB',
-      fileType: 'pdf'
+      fileType: 'pdf',
+      url: undefined
     });
   };
 
@@ -972,7 +1043,15 @@ export const AccountsModule: React.FC = () => {
                             className="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200/70 hover:border-rose-200 transition-colors shadow-2xs"
                           >
                             <div className="flex items-center gap-2 min-w-0">
-                              <FileText className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                              {['jpg', 'jpeg', 'png'].includes(doc.fileType) || doc.name.match(/\.(jpg|jpeg|png)$/i) ? (
+                                <ImageIcon className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                              ) : ['xlsx', 'xls'].includes(doc.fileType) || doc.name.match(/\.(xlsx|xls)$/i) ? (
+                                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              ) : ['docx', 'doc'].includes(doc.fileType) || doc.name.match(/\.(docx|doc)$/i) ? (
+                                <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                              ) : (
+                                <FileText className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                              )}
                               <span className="text-xs font-medium text-slate-700 truncate">{doc.name}</span>
                               <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-semibold shrink-0">
                                 {doc.category}
@@ -1370,14 +1449,16 @@ export const AccountsModule: React.FC = () => {
                             >
                               <div className="flex items-center gap-3 min-w-0">
                                 <div className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                                  {doc.fileType === 'xlsx' || doc.name.endsWith('.xlsx') ? (
+                                  {['jpg', 'jpeg', 'png'].includes(doc.fileType) || doc.name.match(/\.(jpg|jpeg|png)$/i) ? (
+                                    <ImageIcon className="w-4 h-4 text-purple-600" />
+                                  ) : ['xlsx', 'xls'].includes(doc.fileType) || doc.name.match(/\.(xlsx|xls)$/i) ? (
                                     <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                                  ) : ['docx', 'doc'].includes(doc.fileType) || doc.name.match(/\.(docx|doc)$/i) ? (
+                                    <FileText className="w-4 h-4 text-blue-600" />
                                   ) : isContract ? (
                                     <FileCheck className="w-4 h-4 text-[#E11D48]" />
-                                  ) : isFiscal ? (
-                                    <FileText className="w-4 h-4 text-emerald-600" />
                                   ) : (
-                                    <File className="w-4 h-4 text-slate-600" />
+                                    <FileText className="w-4 h-4 text-rose-500" />
                                   )}
                                 </div>
                                 <div className="min-w-0">
@@ -1964,7 +2045,11 @@ export const AccountsModule: React.FC = () => {
                 </div>
               </div>
               <button
-                onClick={() => setIsAddDocumentModalOpen(false)}
+                onClick={() => {
+                  setIsAddDocumentModalOpen(false);
+                  setUploadedFilePreview(null);
+                  setUploadError(null);
+                }}
                 className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -1972,6 +2057,74 @@ export const AccountsModule: React.FC = () => {
             </div>
 
             <form onSubmit={handleAddDocument} className="space-y-3.5">
+              {/* Hidden Real File Input */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,application/pdf,image/png,image/jpeg,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileSelected(file);
+                }}
+                className="hidden"
+              />
+
+              {/* Drag and Drop Zone / File Picker */}
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) handleFileSelected(file);
+                }}
+                className={`p-4 border-2 border-dashed rounded-xl text-center transition-all cursor-pointer ${
+                  uploadedFilePreview || documentForm.name
+                    ? 'border-emerald-300 bg-emerald-50/30 hover:bg-emerald-50/60'
+                    : 'border-slate-200 bg-slate-50/70 hover:bg-slate-100/60 hover:border-slate-300'
+                }`}
+              >
+                {uploadedFilePreview ? (
+                  <div className="flex flex-col items-center gap-1.5">
+                    <img
+                      src={uploadedFilePreview}
+                      alt="Vista previa"
+                      className="w-16 h-16 object-cover rounded-lg border border-slate-200 shadow-2xs"
+                    />
+                    <span className="text-xs font-bold text-slate-800 truncate max-w-xs">{documentForm.name}</span>
+                    <span className="text-[10px] text-emerald-600 font-bold">
+                      {documentForm.size} · Imagen cargada (haz clic para cambiar)
+                    </span>
+                  </div>
+                ) : documentForm.name ? (
+                  <div className="flex flex-col items-center gap-1">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                    <span className="text-xs font-bold text-slate-800 truncate max-w-xs">{documentForm.name}</span>
+                    <span className="text-[10px] text-emerald-600 font-bold">
+                      {documentForm.size} · Archivo listo para adjuntar (haz clic para cambiar)
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5 mx-auto text-[#E11D48] mb-1.5" />
+                    <span className="text-xs font-bold text-slate-700 block">
+                      Haz clic para seleccionar archivo o arrástralo aquí
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-1 block">
+                      Formatos permitidos: <strong className="text-slate-700">PDF, JPEG, PNG, Word y Excel</strong>
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* Error Message when unsupported format */}
+              {uploadError && (
+                <div className="p-2.5 bg-rose-50 border border-rose-200 text-[#E11D48] rounded-xl text-xs flex items-start gap-2 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span className="font-semibold leading-tight">{uploadError}</span>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Nombre del archivo *</label>
                 <input
@@ -1979,7 +2132,7 @@ export const AccountsModule: React.FC = () => {
                   required
                   value={documentForm.name}
                   onChange={(e) => setDocumentForm({ ...documentForm, name: e.target.value })}
-                  placeholder="Ej. Contrato_Servicios_Firmado_2026"
+                  placeholder="Ej. Contrato_Servicios_Firmado_2026.pdf"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
                 />
               </div>
@@ -1995,36 +2148,41 @@ export const AccountsModule: React.FC = () => {
                     <option value="Contrato">Contrato Comercial</option>
                     <option value="Fiscal">Constancia Fiscal / RFC</option>
                     <option value="Cotización">Cotización / Propuesta</option>
-                    <option value="Legal">Legal / NDA</option>
-                    <option value="Técnico">Técnico / SLA</option>
+                    <option value="Legal">Legal / Acuerdos</option>
+                    <option value="Técnico">Técnico / Ficha técnica</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Formato</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Formato permitido</label>
                   <select
                     value={documentForm.fileType}
                     onChange={(e) => setDocumentForm({ ...documentForm, fileType: e.target.value as any })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
                   >
-                    <option value="pdf">Documento PDF (.pdf)</option>
-                    <option value="docx">Word (.docx)</option>
-                    <option value="xlsx">Excel (.xlsx)</option>
+                    <option value="pdf">PDF (.pdf)</option>
+                    <option value="jpeg">Imagen JPEG (.jpeg, .jpg)</option>
+                    <option value="png">Imagen PNG (.png)</option>
+                    <option value="docx">Microsoft Word (.docx, .doc)</option>
+                    <option value="xlsx">Microsoft Excel (.xlsx, .xls)</option>
                   </select>
                 </div>
               </div>
 
-              {/* Drag and Drop Box Simulation */}
-              <div className="p-4 border-2 border-dashed border-slate-200 rounded-xl text-center bg-slate-50/70 hover:bg-slate-100/50 transition-colors cursor-pointer">
-                <Paperclip className="w-5 h-5 mx-auto text-slate-400 mb-1" />
-                <span className="text-xs font-bold text-slate-700 block">Arrastra el archivo aquí o haz clic para explorar</span>
-                <span className="text-[10px] text-slate-400 mt-0.5 block">Formatos permitidos: PDF, DOCX, XLSX (Hasta 25 MB)</span>
+              {/* Supported formats disclaimer */}
+              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                <span>Formatos admitidos:</span>
+                <span className="font-bold text-slate-700">PDF · JPG · PNG · DOC · XLS</span>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsAddDocumentModalOpen(false)}
+                  onClick={() => {
+                    setIsAddDocumentModalOpen(false);
+                    setUploadedFilePreview(null);
+                    setUploadError(null);
+                  }}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer"
                 >
                   Cancelar
@@ -2047,12 +2205,22 @@ export const AccountsModule: React.FC = () => {
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in duration-200">
             <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-rose-50 text-[#E11D48] flex items-center justify-center">
-                  <FileText className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                  {['jpg', 'jpeg', 'png'].includes(previewDoc.fileType) || previewDoc.name.match(/\.(jpg|jpeg|png)$/i) ? (
+                    <ImageIcon className="w-4 h-4 text-purple-600" />
+                  ) : ['xlsx', 'xls'].includes(previewDoc.fileType) || previewDoc.name.match(/\.(xlsx|xls)$/i) ? (
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  ) : ['docx', 'doc'].includes(previewDoc.fileType) || previewDoc.name.match(/\.(docx|doc)$/i) ? (
+                    <FileText className="w-4 h-4 text-blue-600" />
+                  ) : (
+                    <FileText className="w-4 h-4 text-[#E11D48]" />
+                  )}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h3 className="text-sm font-extrabold text-slate-900 truncate max-w-xs">{previewDoc.name}</h3>
-                  <p className="text-[11px] text-slate-400">{previewDoc.category} · {previewDoc.size}</p>
+                  <p className="text-[11px] text-slate-400">
+                    {previewDoc.category} · {previewDoc.size} · Formato {previewDoc.fileType.toUpperCase()}
+                  </p>
                 </div>
               </div>
               <button
@@ -2063,21 +2231,41 @@ export const AccountsModule: React.FC = () => {
               </button>
             </div>
 
-            {/* Simulated Document Preview Area */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center space-y-3">
-              <div className="w-16 h-20 bg-white border border-slate-200 rounded-lg shadow-xs mx-auto flex flex-col items-center justify-center p-2">
-                <FileText className="w-8 h-8 text-[#E11D48]" />
-                <span className="text-[9px] font-bold text-slate-500 uppercase mt-1">PDF</span>
+            {/* Document Preview Area */}
+            {previewDoc.url ? (
+              <div className="bg-slate-900/5 rounded-xl p-3 text-center border border-slate-200/80 mb-3">
+                <img
+                  src={previewDoc.url}
+                  alt={previewDoc.name}
+                  className="max-h-72 mx-auto rounded-lg object-contain shadow-xs"
+                />
               </div>
-              <p className="text-xs font-bold text-slate-800">
-                Documento validado y archivado en el expediente de {selectedAccount.name}
-              </p>
-              <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
-                Subido el {previewDoc.uploadedAt} por {previewDoc.uploadedBy}. Integridad digital verificada.
-              </p>
-            </div>
+            ) : (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center space-y-3 mb-3">
+                <div className="w-16 h-20 bg-white border border-slate-200 rounded-lg shadow-xs mx-auto flex flex-col items-center justify-center p-2">
+                  {['jpg', 'jpeg', 'png'].includes(previewDoc.fileType) || previewDoc.name.match(/\.(jpg|jpeg|png)$/i) ? (
+                    <ImageIcon className="w-8 h-8 text-purple-600" />
+                  ) : ['xlsx', 'xls'].includes(previewDoc.fileType) || previewDoc.name.match(/\.(xlsx|xls)$/i) ? (
+                    <FileSpreadsheet className="w-8 h-8 text-emerald-600" />
+                  ) : ['docx', 'doc'].includes(previewDoc.fileType) || previewDoc.name.match(/\.(docx|doc)$/i) ? (
+                    <FileText className="w-8 h-8 text-blue-600" />
+                  ) : (
+                    <FileText className="w-8 h-8 text-[#E11D48]" />
+                  )}
+                  <span className="text-[9px] font-bold text-slate-500 uppercase mt-1">
+                    {previewDoc.fileType}
+                  </span>
+                </div>
+                <p className="text-xs font-bold text-slate-800">
+                  Documento validado y archivado en el expediente de {selectedAccount.name}
+                </p>
+                <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
+                  Subido el {previewDoc.uploadedAt} por {previewDoc.uploadedBy}. Integridad digital verificada.
+                </p>
+              </div>
+            )}
 
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
               <button
                 onClick={() => setPreviewDoc(null)}
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer"
@@ -2086,7 +2274,7 @@ export const AccountsModule: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  alert(`Descargando ${previewDoc.name}`);
+                  alert(`Descargando archivo: ${previewDoc.name}`);
                   setPreviewDoc(null);
                 }}
                 className="px-4 py-2 bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs flex items-center gap-1.5"

@@ -46,7 +46,8 @@ export interface AccountDocument {
   size: string;
   uploadedAt: string;
   uploadedBy: string;
-  fileType: 'pdf' | 'docx' | 'xlsx';
+  fileType: 'pdf' | 'docx' | 'doc' | 'xlsx' | 'xls' | 'jpg' | 'jpeg' | 'png';
+  url?: string;
 }
 
 export interface Account {
