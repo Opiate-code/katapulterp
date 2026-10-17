@@ -26,20 +26,32 @@ import {
   Download,
   CheckCircle2,
   PhoneCall,
-  Calendar
+  Calendar,
+  Layers,
+  Paperclip,
+  Eye,
+  Upload,
+  FileSpreadsheet,
+  FileCheck,
+  File,
+  Check
 } from 'lucide-react';
 import {
   Account,
   INITIAL_ACCOUNTS,
   AccountContactItem,
   AccountOpportunityItem,
-  AccountActivityItem
+  AccountActivityItem,
+  AccountContractedService,
+  AccountDocument
 } from '../data/accountsData';
 
 export const AccountsModule: React.FC = () => {
   const [accounts, setAccounts] = useState<Account[]>(INITIAL_ACCOUNTS);
   const [selectedAccountId, setSelectedAccountId] = useState<string>(INITIAL_ACCOUNTS[0].id);
-  const [activeTab, setActiveTab] = useState<'overview' | 'contacts' | 'opportunities' | 'activities' | 'financial'>('overview');
+
+  // 5 Core Internal Structure Tabs + Opportunities
+  const [activeTab, setActiveTab] = useState<'overview' | 'contacts' | 'services' | 'activities' | 'documents' | 'opportunities'>('overview');
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,6 +62,9 @@ export const AccountsModule: React.FC = () => {
   // Modals
   const [isNewAccountOpen, setIsNewAccountOpen] = useState(false);
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false);
+  const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
+  const [isAddDocumentModalOpen, setIsAddDocumentModalOpen] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<AccountDocument | null>(null);
 
   // New Account Form State
   const [formData, setFormData] = useState({
@@ -76,6 +91,26 @@ export const AccountsModule: React.FC = () => {
     email: '',
     phone: '',
     isPrimary: false
+  });
+
+  // New Service Form State
+  const [serviceForm, setServiceForm] = useState({
+    name: '',
+    category: 'Software & Cloud' as AccountContractedService['category'],
+    billingCycle: 'Mensual' as AccountContractedService['billingCycle'],
+    cost: '$1,500 USD / mes',
+    rawCost: 1500,
+    startDate: new Date().toISOString().split('T')[0],
+    renewalDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    status: 'activo' as AccountContractedService['status']
+  });
+
+  // New Document Form State
+  const [documentForm, setDocumentForm] = useState({
+    name: '',
+    category: 'Contrato' as AccountDocument['category'],
+    size: '1.5 MB',
+    fileType: 'pdf' as AccountDocument['fileType']
   });
 
   // Calculate Indicator KPIs
@@ -163,7 +198,9 @@ export const AccountsModule: React.FC = () => {
           description: `Registro inicial de ${formData.type === 'empresa' ? 'empresa' : 'persona particular'}.`,
           user: formData.accountOwner
         }
-      ]
+      ],
+      services: [],
+      documents: []
     };
 
     setAccounts([newAcc, ...accounts]);
@@ -214,6 +251,103 @@ export const AccountsModule: React.FC = () => {
     setNewContactForm({ name: '', role: '', email: '', phone: '', isPrimary: false });
   };
 
+  // Handle Add Service to Account
+  const handleAddService = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!serviceForm.name || !selectedAccount) return;
+
+    const newSrv: AccountContractedService = {
+      id: `srv-${Date.now()}`,
+      name: serviceForm.name,
+      category: serviceForm.category,
+      billingCycle: serviceForm.billingCycle,
+      cost: serviceForm.cost,
+      rawCost: serviceForm.rawCost,
+      startDate: serviceForm.startDate,
+      renewalDate: serviceForm.renewalDate,
+      status: serviceForm.status
+    };
+
+    const newActivity: AccountActivityItem = {
+      id: `act-${Date.now()}`,
+      date: 'Hoy',
+      type: 'contract',
+      title: `Servicio contratado: ${serviceForm.name}`,
+      description: `Plan ${serviceForm.billingCycle} (${serviceForm.cost}). Renovación: ${serviceForm.renewalDate}`,
+      user: 'Ana Torres'
+    };
+
+    setAccounts((prev) =>
+      prev.map((acc) =>
+        acc.id === selectedAccount.id
+          ? {
+              ...acc,
+              services: [...(acc.services || []), newSrv],
+              activities: [newActivity, ...acc.activities],
+              mrr: serviceForm.billingCycle === 'Mensual' ? (acc.mrr || 0) + serviceForm.rawCost : acc.mrr
+            }
+          : acc
+      )
+    );
+
+    setIsAddServiceModalOpen(false);
+    setServiceForm({
+      name: '',
+      category: 'Software & Cloud',
+      billingCycle: 'Mensual',
+      cost: '$1,500 USD / mes',
+      rawCost: 1500,
+      startDate: new Date().toISOString().split('T')[0],
+      renewalDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      status: 'activo'
+    });
+  };
+
+  // Handle Add Document to Account
+  const handleAddDocument = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!documentForm.name || !selectedAccount) return;
+
+    const newDoc: AccountDocument = {
+      id: `doc-${Date.now()}`,
+      name: documentForm.name.endsWith('.pdf') ? documentForm.name : `${documentForm.name}.${documentForm.fileType}`,
+      category: documentForm.category,
+      size: documentForm.size || '1.2 MB',
+      uploadedAt: 'Hoy',
+      uploadedBy: 'Ana Torres',
+      fileType: documentForm.fileType
+    };
+
+    const newActivity: AccountActivityItem = {
+      id: `act-${Date.now()}`,
+      date: 'Hoy',
+      type: 'contract',
+      title: `Documento adjunto: ${newDoc.name}`,
+      description: `Archivo ${newDoc.category} subido al expediente comercial.`,
+      user: 'Ana Torres'
+    };
+
+    setAccounts((prev) =>
+      prev.map((acc) =>
+        acc.id === selectedAccount.id
+          ? {
+              ...acc,
+              documents: [...(acc.documents || []), newDoc],
+              activities: [newActivity, ...acc.activities]
+            }
+          : acc
+      )
+    );
+
+    setIsAddDocumentModalOpen(false);
+    setDocumentForm({
+      name: '',
+      category: 'Contrato',
+      size: '1.5 MB',
+      fileType: 'pdf'
+    });
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-[#F8FAFC] overflow-hidden">
       {/* 1. Header & Indicator KPIs Panel */}
@@ -232,7 +366,7 @@ export const AccountsModule: React.FC = () => {
                 </span>
               </div>
               <p className="text-[11px] text-slate-400">
-                Gestión integral de empresas y personas particulares con analíticas y cartera
+                Gestión integral de empresas y personas particulares con analíticas, servicios y expediente
               </p>
             </div>
           </div>
@@ -368,7 +502,7 @@ export const AccountsModule: React.FC = () => {
           <div className="p-3 border-b border-slate-100 flex items-center justify-between text-xs text-slate-500 font-bold shrink-0">
             <span>Directorio de Cuentas</span>
             <span className="text-[10px] text-slate-400 font-normal">
-              Selecciona una cuenta para auditar su ficha 360°
+              Selecciona una cuenta para auditar su estructura interna completa
             </span>
           </div>
 
@@ -421,21 +555,16 @@ export const AccountsModule: React.FC = () => {
                         </span>
                       </div>
 
-                      {/* Contacts Avatars Preview */}
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex -space-x-1.5 overflow-hidden">
-                          {account.contacts.map((ct) => (
-                            <img
-                              key={ct.id}
-                              src={ct.avatar}
-                              alt={ct.name}
-                              title={`${ct.name} (${ct.role})`}
-                              className="w-4 h-4 rounded-full object-cover ring-1 ring-white"
-                            />
-                          ))}
-                        </div>
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          {account.contacts.length} {account.contacts.length === 1 ? 'contacto' : 'contactos'}
+                      {/* Contacts & Services Preview */}
+                      <div className="flex items-center gap-3 mt-1 text-[10px] text-slate-400 font-medium">
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3 h-3 text-slate-400" />
+                          {account.contacts.length} contactos
+                        </span>
+                        <span>·</span>
+                        <span className="flex items-center gap-1 text-indigo-600 font-semibold">
+                          <Layers className="w-3 h-3" />
+                          {account.services?.length || 0} servicios
                         </span>
                       </div>
                     </div>
@@ -488,7 +617,7 @@ export const AccountsModule: React.FC = () => {
 
         {/* Right: Account 360° Inspector */}
         {selectedAccount && (
-          <div className="w-96 xl:w-[460px] bg-white rounded-xl border border-slate-200/80 shadow-2xs flex flex-col min-h-0 overflow-hidden shrink-0">
+          <div className="w-96 xl:w-[480px] bg-white rounded-xl border border-slate-200/80 shadow-2xs flex flex-col min-h-0 overflow-hidden shrink-0">
             {/* Inspector Hero Header */}
             <div className="p-4 bg-slate-50/70 border-b border-slate-200/80 shrink-0">
               <div className="flex items-start justify-between gap-3">
@@ -576,8 +705,9 @@ export const AccountsModule: React.FC = () => {
                 </button>
               </div>
 
-              {/* Inspector Navigation Tabs */}
-              <div className="flex border-b border-slate-200 mt-4 -mb-4 gap-4 text-xs font-bold text-slate-500 overflow-x-auto">
+              {/* Inspector Navigation Tabs (Estructura Interna) */}
+              <div className="flex border-b border-slate-200 mt-4 -mb-4 gap-3 text-xs font-bold text-slate-500 overflow-x-auto pb-0.5">
+                {/* 1. Información General */}
                 <button
                   onClick={() => setActiveTab('overview')}
                   className={`pb-2.5 transition-colors cursor-pointer border-b-2 shrink-0 ${
@@ -586,8 +716,10 @@ export const AccountsModule: React.FC = () => {
                       : 'border-transparent hover:text-slate-800'
                   }`}
                 >
-                  Visión General
+                  Información
                 </button>
+
+                {/* 2. Directorio de Contactos */}
                 <button
                   onClick={() => setActiveTab('contacts')}
                   className={`pb-2.5 transition-colors cursor-pointer border-b-2 shrink-0 flex items-center gap-1 ${
@@ -601,19 +733,23 @@ export const AccountsModule: React.FC = () => {
                     {selectedAccount.contacts.length}
                   </span>
                 </button>
+
+                {/* 3. Servicios Contratados */}
                 <button
-                  onClick={() => setActiveTab('opportunities')}
+                  onClick={() => setActiveTab('services')}
                   className={`pb-2.5 transition-colors cursor-pointer border-b-2 shrink-0 flex items-center gap-1 ${
-                    activeTab === 'opportunities'
+                    activeTab === 'services'
                       ? 'border-[#E11D48] text-[#E11D48]'
                       : 'border-transparent hover:text-slate-800'
                   }`}
                 >
-                  <span>Oportunidades</span>
-                  <span className="text-[10px] bg-slate-200 px-1.5 py-0.2 rounded-full text-slate-700">
-                    {selectedAccount.opportunities.length}
+                  <span>Servicios</span>
+                  <span className="text-[10px] bg-indigo-100 text-indigo-700 font-extrabold px-1.5 py-0.2 rounded-full">
+                    {selectedAccount.services?.length || 0}
                   </span>
                 </button>
+
+                {/* 4. Historial de Actividades */}
                 <button
                   onClick={() => setActiveTab('activities')}
                   className={`pb-2.5 transition-colors cursor-pointer border-b-2 shrink-0 flex items-center gap-1 ${
@@ -622,27 +758,44 @@ export const AccountsModule: React.FC = () => {
                       : 'border-transparent hover:text-slate-800'
                   }`}
                 >
-                  <span>Historial</span>
+                  <span>Actividades</span>
                   <span className="text-[10px] bg-slate-200 px-1.5 py-0.2 rounded-full text-slate-700">
                     {selectedAccount.activities.length}
                   </span>
                 </button>
+
+                {/* 5. Documentos Adjuntos */}
                 <button
-                  onClick={() => setActiveTab('financial')}
-                  className={`pb-2.5 transition-colors cursor-pointer border-b-2 shrink-0 ${
-                    activeTab === 'financial'
+                  onClick={() => setActiveTab('documents')}
+                  className={`pb-2.5 transition-colors cursor-pointer border-b-2 shrink-0 flex items-center gap-1 ${
+                    activeTab === 'documents'
                       ? 'border-[#E11D48] text-[#E11D48]'
                       : 'border-transparent hover:text-slate-800'
                   }`}
                 >
-                  Financiero
+                  <span>Documentos</span>
+                  <span className="text-[10px] bg-slate-200 px-1.5 py-0.2 rounded-full text-slate-700">
+                    {selectedAccount.documents?.length || 0}
+                  </span>
+                </button>
+
+                {/* Oportunidades & Finanzas */}
+                <button
+                  onClick={() => setActiveTab('opportunities')}
+                  className={`pb-2.5 transition-colors cursor-pointer border-b-2 shrink-0 flex items-center gap-1 ${
+                    activeTab === 'opportunities'
+                      ? 'border-[#E11D48] text-[#E11D48]'
+                      : 'border-transparent hover:text-slate-800'
+                  }`}
+                >
+                  <span>Finanzas</span>
                 </button>
               </div>
             </div>
 
             {/* Inspector Tab Content Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* TAB 1: Visión General */}
+              {/* ESTRUCTURA 1: Información General */}
               {activeTab === 'overview' && (
                 <div className="space-y-4 text-xs">
                   {/* Strategic Notes */}
@@ -713,7 +866,7 @@ export const AccountsModule: React.FC = () => {
                 </div>
               )}
 
-              {/* TAB 2: Contactos de la Cuenta */}
+              {/* ESTRUCTURA 2: Directorio de Contactos Relacionados */}
               {activeTab === 'contacts' && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -782,50 +935,77 @@ export const AccountsModule: React.FC = () => {
                 </div>
               )}
 
-              {/* TAB 3: Oportunidades Comerciales */}
-              {activeTab === 'opportunities' && (
+              {/* ESTRUCTURA 3: Servicios Contratados */}
+              {activeTab === 'services' && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">Tratos comerciales activos</span>
-                    <span className="text-xs font-black text-purple-700">
-                      Total: ${selectedAccount.totalPipelineValue.toLocaleString()} USD
-                    </span>
+                    <div>
+                      <span className="text-xs font-bold text-slate-800">Servicios y Licencias Activas</span>
+                      <p className="text-[10px] text-slate-400">Contratos recurrentes y módulos en producción</p>
+                    </div>
+                    <button
+                      onClick={() => setIsAddServiceModalOpen(true)}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#E11D48] hover:text-[#BE123C] cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Contratar servicio</span>
+                    </button>
                   </div>
 
-                  {selectedAccount.opportunities.map((opp) => (
+                  {selectedAccount.services && selectedAccount.services.map((srv) => (
                     <div
-                      key={opp.id}
-                      className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 hover:border-purple-200 transition-colors"
+                      key={srv.id}
+                      className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 hover:border-indigo-200 transition-colors space-y-2"
                     >
                       <div className="flex items-start justify-between">
                         <div>
-                          <h4 className="text-xs font-bold text-slate-900">{opp.title}</h4>
-                          <p className="text-sm font-black text-slate-900 mt-0.5">{opp.amount}</p>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-extrabold text-slate-900">{srv.name}</h4>
+                            <span
+                              className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded capitalize ${
+                                srv.status === 'activo'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                  : srv.status === 'en_renovacion'
+                                  ? 'bg-amber-50 text-amber-700 border border-amber-100'
+                                  : 'bg-slate-200 text-slate-600'
+                              }`}
+                            >
+                              {srv.status === 'activo' ? 'Activo' : srv.status === 'en_renovacion' ? 'Por Renovar' : 'Finalizado'}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-semibold text-slate-500">
+                            {srv.category} · Plan {srv.billingCycle}
+                          </span>
                         </div>
-                        <span className="text-[10px] font-bold px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md">
-                          {opp.stage}
-                        </span>
+                        <div className="text-right">
+                          <span className="text-xs font-black text-slate-900">{srv.cost}</span>
+                        </div>
                       </div>
 
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200/60 text-[10px] text-slate-500">
-                        <span>Cierre estimado: <b className="text-slate-700">{opp.closeDate}</b></span>
-                        <span className="capitalize font-bold text-emerald-600">Activa en embudo</span>
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-[10px] text-slate-400">
+                        <span>Inicio: <b className="text-slate-600">{srv.startDate}</b></span>
+                        <span>Próxima renovación: <b className="text-indigo-600">{srv.renewalDate}</b></span>
                       </div>
                     </div>
                   ))}
 
-                  {selectedAccount.opportunities.length === 0 && (
-                    <div className="p-6 text-center text-slate-400 text-xs">
-                      Sin tratos comerciales abiertos en este momento.
+                  {(!selectedAccount.services || selectedAccount.services.length === 0) && (
+                    <div className="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                      <Layers className="w-6 h-6 mx-auto mb-2 text-slate-300" />
+                      <p className="font-semibold">Sin servicios contratados actualmente</p>
+                      <p className="text-[11px] mt-0.5">Haz clic en "Contratar servicio" para dar de alta una licencia o plan.</p>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* TAB 4: Historial & Actividades */}
+              {/* ESTRUCTURA 4: Historial de Actividades */}
               {activeTab === 'activities' && (
                 <div className="space-y-3">
-                  <span className="text-xs font-bold text-slate-700 block">Bitácora de cuenta</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700">Bitácora Integral de la Cuenta</span>
+                    <span className="text-[10px] text-slate-400">{selectedAccount.activities.length} registros</span>
+                  </div>
 
                   <div className="relative pl-4 space-y-3.5 before:content-[''] before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
                     {selectedAccount.activities.map((act) => (
@@ -847,61 +1027,156 @@ export const AccountsModule: React.FC = () => {
                 </div>
               )}
 
-              {/* TAB 5: Resumen Financiero */}
-              {activeTab === 'financial' && (
+              {/* ESTRUCTURA 5: Documentos Adjuntos */}
+              {activeTab === 'documents' && (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl">
-                      <span className="text-[10px] font-bold text-emerald-800 uppercase block">
-                        Ingresos Generados (LTV)
-                      </span>
-                      <span className="text-base font-black text-emerald-900 mt-1 block">
-                        ${selectedAccount.lifetimeRevenue.toLocaleString()} USD
-                      </span>
-                      <span className="text-[9px] text-emerald-700 mt-0.5 block">Histórico facturado</span>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-slate-800">Expediente Digital</span>
+                      <p className="text-[10px] text-slate-400">Contratos, constancias fiscales, cotizaciones y acuerdos</p>
                     </div>
-
-                    <div className="p-3 bg-purple-50/70 border border-purple-100 rounded-xl">
-                      <span className="text-[10px] font-bold text-purple-800 uppercase block">
-                        Pipeline Abierto
-                      </span>
-                      <span className="text-base font-black text-purple-900 mt-1 block">
-                        ${selectedAccount.totalPipelineValue.toLocaleString()} USD
-                      </span>
-                      <span className="text-[9px] text-purple-700 mt-0.5 block">Por cerrar</span>
-                    </div>
+                    <button
+                      onClick={() => setIsAddDocumentModalOpen(true)}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#E11D48] hover:text-[#BE123C] cursor-pointer"
+                    >
+                      <Upload className="w-3 h-3" />
+                      <span>Subir documento</span>
+                    </button>
                   </div>
 
-                  {selectedAccount.mrr && (
-                    <div className="p-3 bg-slate-900 text-white rounded-xl flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase block">
-                          Ingreso Recurrente Mensual (MRR)
-                        </span>
-                        <span className="text-lg font-black text-white mt-0.5 block">
-                          ${selectedAccount.mrr.toLocaleString()} USD/mes
-                        </span>
+                  {selectedAccount.documents && selectedAccount.documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 hover:bg-slate-100/70 transition-colors flex items-center justify-between gap-3 group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-rose-50 text-[#E11D48] flex items-center justify-center shrink-0">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-bold text-slate-900 truncate group-hover:text-[#E11D48] transition-colors">
+                            {doc.name}
+                          </h4>
+                          <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                            <span className="font-semibold text-slate-600">{doc.category}</span>
+                            <span>·</span>
+                            <span>{doc.size}</span>
+                            <span>·</span>
+                            <span>Subido el {doc.uploadedAt} por {doc.uploadedBy}</span>
+                          </div>
+                        </div>
                       </div>
-                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950 px-2.5 py-1 rounded-lg border border-emerald-800">
-                        Suscripción Activa
-                      </span>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => setPreviewDoc(doc)}
+                          title="Previsualizar documento"
+                          className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-[#E11D48] transition-colors cursor-pointer"
+                        >
+                          <Eye className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => alert(`Descargando archivo: ${doc.name}`)}
+                          title="Descargar documento"
+                          className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-[#E11D48] transition-colors cursor-pointer"
+                        >
+                          <Download className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {(!selectedAccount.documents || selectedAccount.documents.length === 0) && (
+                    <div className="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                      <Paperclip className="w-6 h-6 mx-auto mb-2 text-slate-300" />
+                      <p className="font-semibold">Sin documentos adjuntos</p>
+                      <p className="text-[11px] mt-0.5">Adjunta contratos firmados o constancias de situación fiscal.</p>
                     </div>
                   )}
+                </div>
+              )}
 
-                  <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs space-y-2">
-                    <span className="font-bold text-slate-800 block">Condiciones comerciales</span>
-                    <div className="flex justify-between text-slate-500">
-                      <span>Plazo de pago:</span>
-                      <span className="font-semibold text-slate-800">Net 30 días</span>
+              {/* Oportunidades & Finanzas */}
+              {activeTab === 'opportunities' && (
+                <div className="space-y-4">
+                  {/* Tratos Comerciales */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700">Tratos comerciales activos</span>
+                      <span className="text-xs font-black text-purple-700">
+                        Total: ${selectedAccount.totalPipelineValue.toLocaleString()} USD
+                      </span>
                     </div>
-                    <div className="flex justify-between text-slate-500">
-                      <span>Moneda principal:</span>
-                      <span className="font-semibold text-slate-800">USD / MXN</span>
+
+                    {selectedAccount.opportunities.map((opp) => (
+                      <div
+                        key={opp.id}
+                        className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 hover:border-purple-200 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-900">{opp.title}</h4>
+                            <p className="text-sm font-black text-slate-900 mt-0.5">{opp.amount}</p>
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md">
+                            {opp.stage}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200/60 text-[10px] text-slate-500">
+                          <span>Cierre estimado: <b className="text-slate-700">{opp.closeDate}</b></span>
+                          <span className="capitalize font-bold text-emerald-600">Activa en embudo</span>
+                        </div>
+                      </div>
+                    ))}
+
+                    {selectedAccount.opportunities.length === 0 && (
+                      <div className="p-4 text-center text-slate-400 text-xs bg-slate-50 rounded-xl">
+                        Sin tratos comerciales abiertos en este momento.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Resumen Financiero LTV / MRR */}
+                  <div className="space-y-2.5 pt-3 border-t border-slate-100">
+                    <span className="text-xs font-bold text-slate-700 block">Indicadores Financieros</span>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl">
+                        <span className="text-[10px] font-bold text-emerald-800 uppercase block">
+                          Ingresos Generados (LTV)
+                        </span>
+                        <span className="text-base font-black text-emerald-900 mt-1 block">
+                          ${selectedAccount.lifetimeRevenue.toLocaleString()} USD
+                        </span>
+                        <span className="text-[9px] text-emerald-700 mt-0.5 block">Histórico facturado</span>
+                      </div>
+
+                      <div className="p-3 bg-purple-50/70 border border-purple-100 rounded-xl">
+                        <span className="text-[10px] font-bold text-purple-800 uppercase block">
+                          Pipeline Abierto
+                        </span>
+                        <span className="text-base font-black text-purple-900 mt-1 block">
+                          ${selectedAccount.totalPipelineValue.toLocaleString()} USD
+                        </span>
+                        <span className="text-[9px] text-purple-700 mt-0.5 block">Por cerrar</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-slate-500">
-                      <span>Estado crediticio:</span>
-                      <span className="font-bold text-emerald-600">Al corriente</span>
-                    </div>
+
+                    {selectedAccount.mrr && (
+                      <div className="p-3 bg-slate-900 text-white rounded-xl flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase block">
+                            Ingreso Recurrente Mensual (MRR)
+                          </span>
+                          <span className="text-lg font-black text-white mt-0.5 block">
+                            ${selectedAccount.mrr.toLocaleString()} USD/mes
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950 px-2.5 py-1 rounded-lg border border-emerald-800">
+                          Suscripción Activa
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1194,6 +1469,291 @@ export const AccountsModule: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Contratar / Agregar Servicio */}
+      {isAddServiceModalOpen && selectedAccount && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in duration-200">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <Layers className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">Agregar servicio contratado</h3>
+                  <p className="text-xs text-slate-400">Para {selectedAccount.name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAddServiceModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddService} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Nombre del servicio o plan *</label>
+                <input
+                  type="text"
+                  required
+                  value={serviceForm.name}
+                  onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
+                  placeholder="Ej. Katapult ERP Enterprise (25 Licencias)"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Categoría</label>
+                  <select
+                    value={serviceForm.category}
+                    onChange={(e) => setServiceForm({ ...serviceForm, category: e.target.value as any })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                  >
+                    <option value="Software & Cloud">Software & Cloud</option>
+                    <option value="Consultoría">Consultoría</option>
+                    <option value="Soporte & SLA">Soporte & SLA</option>
+                    <option value="Marketing & Leads">Marketing & Leads</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Ciclo de facturación</label>
+                  <select
+                    value={serviceForm.billingCycle}
+                    onChange={(e) => setServiceForm({ ...serviceForm, billingCycle: e.target.value as any })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                  >
+                    <option value="Mensual">Mensual</option>
+                    <option value="Anual">Anual</option>
+                    <option value="Pago único">Pago único</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Tarifa comercial *</label>
+                  <input
+                    type="text"
+                    required
+                    value={serviceForm.cost}
+                    onChange={(e) => setServiceForm({ ...serviceForm, cost: e.target.value })}
+                    placeholder="Ej. $2,500 USD / mes"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Estado</label>
+                  <select
+                    value={serviceForm.status}
+                    onChange={(e) => setServiceForm({ ...serviceForm, status: e.target.value as any })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                  >
+                    <option value="activo">Activo</option>
+                    <option value="en_renovacion">En renovación</option>
+                    <option value="finalizado">Finalizado</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Fecha de inicio</label>
+                  <input
+                    type="date"
+                    required
+                    value={serviceForm.startDate}
+                    onChange={(e) => setServiceForm({ ...serviceForm, startDate: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Fecha de renovación</label>
+                  <input
+                    type="date"
+                    required
+                    value={serviceForm.renewalDate}
+                    onChange={(e) => setServiceForm({ ...serviceForm, renewalDate: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddServiceModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs"
+                >
+                  Registrar servicio
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Subir / Adjuntar Documento */}
+      {isAddDocumentModalOpen && selectedAccount && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in duration-200">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-rose-50 text-[#E11D48] flex items-center justify-center">
+                  <Upload className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">Adjuntar documento</h3>
+                  <p className="text-xs text-slate-400">Expediente de {selectedAccount.name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAddDocumentModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddDocument} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Nombre del archivo *</label>
+                <input
+                  type="text"
+                  required
+                  value={documentForm.name}
+                  onChange={(e) => setDocumentForm({ ...documentForm, name: e.target.value })}
+                  placeholder="Ej. Contrato_Servicios_Firmado_2026"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Tipo de documento</label>
+                  <select
+                    value={documentForm.category}
+                    onChange={(e) => setDocumentForm({ ...documentForm, category: e.target.value as any })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                  >
+                    <option value="Contrato">Contrato Comercial</option>
+                    <option value="Fiscal">Constancia Fiscal / RFC</option>
+                    <option value="Cotización">Cotización / Propuesta</option>
+                    <option value="Legal">Legal / NDA</option>
+                    <option value="Técnico">Técnico / SLA</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Formato</label>
+                  <select
+                    value={documentForm.fileType}
+                    onChange={(e) => setDocumentForm({ ...documentForm, fileType: e.target.value as any })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                  >
+                    <option value="pdf">Documento PDF (.pdf)</option>
+                    <option value="docx">Word (.docx)</option>
+                    <option value="xlsx">Excel (.xlsx)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Drag and Drop Box Simulation */}
+              <div className="p-4 border-2 border-dashed border-slate-200 rounded-xl text-center bg-slate-50/70 hover:bg-slate-100/50 transition-colors cursor-pointer">
+                <Paperclip className="w-5 h-5 mx-auto text-slate-400 mb-1" />
+                <span className="text-xs font-bold text-slate-700 block">Arrastra el archivo aquí o haz clic para explorar</span>
+                <span className="text-[10px] text-slate-400 mt-0.5 block">Formatos permitidos: PDF, DOCX, XLSX (Hasta 25 MB)</span>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddDocumentModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs"
+                >
+                  Adjuntar al expediente
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Previsualización de Documento */}
+      {previewDoc && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in duration-200">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-rose-50 text-[#E11D48] flex items-center justify-center">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900 truncate max-w-xs">{previewDoc.name}</h3>
+                  <p className="text-[11px] text-slate-400">{previewDoc.category} · {previewDoc.size}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewDoc(null)}
+                className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Simulated Document Preview Area */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center space-y-3">
+              <div className="w-16 h-20 bg-white border border-slate-200 rounded-lg shadow-xs mx-auto flex flex-col items-center justify-center p-2">
+                <FileText className="w-8 h-8 text-[#E11D48]" />
+                <span className="text-[9px] font-bold text-slate-500 uppercase mt-1">PDF</span>
+              </div>
+              <p className="text-xs font-bold text-slate-800">
+                Documento validado y archivado en el expediente de {selectedAccount.name}
+              </p>
+              <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
+                Subido el {previewDoc.uploadedAt} por {previewDoc.uploadedBy}. Integridad digital verificada.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <button
+                onClick={() => setPreviewDoc(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer"
+              >
+                Cerrar
+              </button>
+              <button
+                onClick={() => {
+                  alert(`Descargando ${previewDoc.name}`);
+                  setPreviewDoc(null);
+                }}
+                className="px-4 py-2 bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs flex items-center gap-1.5"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Descargar archivo</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

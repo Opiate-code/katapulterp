@@ -27,6 +27,28 @@ export interface AccountActivityItem {
   user: string;
 }
 
+export interface AccountContractedService {
+  id: string;
+  name: string;
+  category: 'Software & Cloud' | 'Consultoría' | 'Soporte & SLA' | 'Marketing & Leads';
+  billingCycle: 'Mensual' | 'Anual' | 'Pago único';
+  cost: string;
+  rawCost: number;
+  startDate: string;
+  renewalDate: string;
+  status: 'activo' | 'en_renovacion' | 'finalizado';
+}
+
+export interface AccountDocument {
+  id: string;
+  name: string;
+  category: 'Contrato' | 'Fiscal' | 'Cotización' | 'Legal' | 'Técnico';
+  size: string;
+  uploadedAt: string;
+  uploadedBy: string;
+  fileType: 'pdf' | 'docx' | 'xlsx';
+}
+
 export interface Account {
   id: string;
   name: string;
@@ -52,6 +74,8 @@ export interface Account {
   contacts: AccountContactItem[];
   opportunities: AccountOpportunityItem[];
   activities: AccountActivityItem[];
+  services: AccountContractedService[];
+  documents: AccountDocument[];
 }
 
 export const INITIAL_ACCOUNTS: Account[] = [
@@ -134,6 +158,70 @@ export const INITIAL_ACCOUNTS: Account[] = [
         description: 'Ampliación solicitada para el equipo de ventas.',
         user: 'Ana Torres'
       }
+    ],
+    services: [
+      {
+        id: 'srv-1',
+        name: 'Katapult ERP Enterprise (35 Licencias)',
+        category: 'Software & Cloud',
+        billingCycle: 'Anual',
+        cost: '$42,000 USD / año',
+        rawCost: 42000,
+        startDate: '01 Feb 2025',
+        renewalDate: '01 Feb 2027',
+        status: 'activo'
+      },
+      {
+        id: 'srv-2',
+        name: 'Módulo de Automatización Comercial e IA',
+        category: 'Marketing & Leads',
+        billingCycle: 'Mensual',
+        cost: '$1,500 USD / mes',
+        rawCost: 1500,
+        startDate: '15 Jun 2025',
+        renewalDate: '15 Nov 2026',
+        status: 'activo'
+      },
+      {
+        id: 'srv-3',
+        name: 'Soporte Dedicado Platinum 24/7',
+        category: 'Soporte & SLA',
+        billingCycle: 'Mensual',
+        cost: '$800 USD / mes',
+        rawCost: 800,
+        startDate: '01 Feb 2025',
+        renewalDate: '01 Feb 2027',
+        status: 'activo'
+      }
+    ],
+    documents: [
+      {
+        id: 'doc-1',
+        name: 'Contrato_Maestro_Servicios_2025_Firmado.pdf',
+        category: 'Contrato',
+        size: '2.4 MB',
+        uploadedAt: '02 Feb 2025',
+        uploadedBy: 'Ana Torres',
+        fileType: 'pdf'
+      },
+      {
+        id: 'doc-2',
+        name: 'Constancia_Situacion_Fiscal_Octubre_2026.pdf',
+        category: 'Fiscal',
+        size: '340 KB',
+        uploadedAt: '01 Oct 2026',
+        uploadedBy: 'María López',
+        fileType: 'pdf'
+      },
+      {
+        id: 'doc-3',
+        name: 'Acuerdo_Confidencialidad_NDA_Multisede.pdf',
+        category: 'Legal',
+        size: '1.1 MB',
+        uploadedAt: '15 Ene 2025',
+        uploadedBy: 'Ana Torres',
+        fileType: 'pdf'
+      }
     ]
   },
   {
@@ -188,6 +276,50 @@ export const INITIAL_ACCOUNTS: Account[] = [
         title: 'Llamada de seguimiento',
         description: 'Revisión de accesos de prueba para el equipo.',
         user: 'Carlos Méndez'
+      }
+    ],
+    services: [
+      {
+        id: 'srv-4',
+        name: 'Katapult CRM Pro (20 Usuarios)',
+        category: 'Software & Cloud',
+        billingCycle: 'Mensual',
+        cost: '$2,400 USD / mes',
+        rawCost: 2400,
+        startDate: '01 Mar 2025',
+        renewalDate: '01 Mar 2027',
+        status: 'activo'
+      },
+      {
+        id: 'srv-5',
+        name: 'Conector de Aduanas & Logística API',
+        category: 'Software & Cloud',
+        billingCycle: 'Mensual',
+        cost: '$800 USD / mes',
+        rawCost: 800,
+        startDate: '15 Abr 2025',
+        renewalDate: '15 Abr 2027',
+        status: 'activo'
+      }
+    ],
+    documents: [
+      {
+        id: 'doc-4',
+        name: 'Contrato_Adhesion_Nexos_2025.pdf',
+        category: 'Contrato',
+        size: '1.8 MB',
+        uploadedAt: '25 Feb 2025',
+        uploadedBy: 'Carlos Méndez',
+        fileType: 'pdf'
+      },
+      {
+        id: 'doc-5',
+        name: 'Caratula_Bancaria_Pagos_Recurrentes.pdf',
+        category: 'Fiscal',
+        size: '420 KB',
+        uploadedAt: '01 Mar 2025',
+        uploadedBy: 'Carlos Méndez',
+        fileType: 'pdf'
       }
     ]
   },
@@ -252,6 +384,27 @@ export const INITIAL_ACCOUNTS: Account[] = [
         description: 'Negociación de cláusulas finales con dirección.',
         user: 'Ana Torres'
       }
+    ],
+    services: [],
+    documents: [
+      {
+        id: 'doc-6',
+        name: 'Propuesta_Tecnica_Transformacion_Delta.pdf',
+        category: 'Cotización',
+        size: '5.2 MB',
+        uploadedAt: '12 Oct 2026',
+        uploadedBy: 'Ana Torres',
+        fileType: 'pdf'
+      },
+      {
+        id: 'doc-7',
+        name: 'Bases_Licitacion_ERP_Privado.pdf',
+        category: 'Legal',
+        size: '2.1 MB',
+        uploadedAt: '10 Mar 2026',
+        uploadedBy: 'Jorge Castillo',
+        fileType: 'pdf'
+      }
     ]
   },
   {
@@ -305,6 +458,30 @@ export const INITIAL_ACCOUNTS: Account[] = [
         title: 'Revisión técnica de APIs y webhooks',
         description: 'Validación de compatibilidad con Google Analytics 4.',
         user: 'Ana Torres'
+      }
+    ],
+    services: [
+      {
+        id: 'srv-6',
+        name: 'Piloto Katapult Marketing Studio (3 Meses)',
+        category: 'Marketing & Leads',
+        billingCycle: 'Pago único',
+        cost: '$4,500 USD',
+        rawCost: 4500,
+        startDate: '01 Sep 2026',
+        renewalDate: '01 Dic 2026',
+        status: 'en_renovacion'
+      }
+    ],
+    documents: [
+      {
+        id: 'doc-8',
+        name: 'Convenio_Piloto_Inbound_InnovaTech.pdf',
+        category: 'Contrato',
+        size: '1.2 MB',
+        uploadedAt: '01 Sep 2026',
+        uploadedBy: 'Ana Torres',
+        fileType: 'pdf'
       }
     ]
   },
@@ -361,6 +538,39 @@ export const INITIAL_ACCOUNTS: Account[] = [
         description: 'Configuración de timbrado CFDI para recibos de honorarios.',
         user: 'Ana Torres'
       }
+    ],
+    services: [
+      {
+        id: 'srv-7',
+        name: 'Katapult Profesional Particular (Salud)',
+        category: 'Software & Cloud',
+        billingCycle: 'Mensual',
+        cost: '$1,800 USD / mes',
+        rawCost: 1800,
+        startDate: '12 Nov 2025',
+        renewalDate: '12 Nov 2026',
+        status: 'activo'
+      }
+    ],
+    documents: [
+      {
+        id: 'doc-9',
+        name: 'Cedula_Profesional_y_Certificacion.pdf',
+        category: 'Legal',
+        size: '890 KB',
+        uploadedAt: '12 Nov 2025',
+        uploadedBy: 'Ana Torres',
+        fileType: 'pdf'
+      },
+      {
+        id: 'doc-10',
+        name: 'Contrato_Suscripcion_Profesional_Firmado.pdf',
+        category: 'Contrato',
+        size: '1.4 MB',
+        uploadedAt: '15 Nov 2025',
+        uploadedBy: 'Ana Torres',
+        fileType: 'pdf'
+      }
     ]
   },
   {
@@ -416,6 +626,30 @@ export const INITIAL_ACCOUNTS: Account[] = [
         description: 'Envío de carátula bancaria y constancia fiscal.',
         user: 'Jorge Castillo'
       }
+    ],
+    services: [
+      {
+        id: 'srv-8',
+        name: 'Katapult ERP Estándar (12 Usuarios)',
+        category: 'Software & Cloud',
+        billingCycle: 'Mensual',
+        cost: '$2,100 USD / mes',
+        rawCost: 2100,
+        startDate: '18 Jun 2025',
+        renewalDate: '18 Jun 2027',
+        status: 'activo'
+      }
+    ],
+    documents: [
+      {
+        id: 'doc-11',
+        name: 'Expediente_Proveedor_Validado_TecnoSol.pdf',
+        category: 'Fiscal',
+        size: '3.1 MB',
+        uploadedAt: '13 Oct 2026',
+        uploadedBy: 'Valentina Torres',
+        fileType: 'pdf'
+      }
     ]
   },
   {
@@ -470,6 +704,18 @@ export const INITIAL_ACCOUNTS: Account[] = [
         description: 'Laura solicitó información detallada de planes.',
         user: 'Ana Torres'
       }
+    ],
+    services: [],
+    documents: [
+      {
+        id: 'doc-12',
+        name: 'Cotizacion_Preliminar_SDS.pdf',
+        category: 'Cotización',
+        size: '760 KB',
+        uploadedAt: '11 Oct 2026',
+        uploadedBy: 'Ana Torres',
+        fileType: 'pdf'
+      }
     ]
   },
   {
@@ -513,6 +759,30 @@ export const INITIAL_ACCOUNTS: Account[] = [
         title: 'Cierre satisfactorio de proyecto',
         description: 'Entrega final y finiquito de contrato de consultoría.',
         user: 'Carlos Méndez'
+      }
+    ],
+    services: [
+      {
+        id: 'srv-9',
+        name: 'Consultoría de Diseño & Renders (Proyecto)',
+        category: 'Consultoría',
+        billingCycle: 'Pago único',
+        cost: '$18,500 USD',
+        rawCost: 18500,
+        startDate: '02 Feb 2025',
+        renewalDate: '20 May 2026',
+        status: 'finalizado'
+      }
+    ],
+    documents: [
+      {
+        id: 'doc-13',
+        name: 'Acta_Entrega_y_Finiquito_Firmada.pdf',
+        category: 'Legal',
+        size: '1.6 MB',
+        uploadedAt: '22 May 2026',
+        uploadedBy: 'Carlos Méndez',
+        fileType: 'pdf'
       }
     ]
   }
