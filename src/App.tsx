@@ -45,7 +45,7 @@ export function App() {
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
-        <Header />
+        <Header onNavigate={(nav) => setActiveNav(nav)} />
 
         {/* Mobile menu trigger */}
         <div className="lg:hidden px-3 py-1.5 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
