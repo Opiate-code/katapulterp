@@ -35,7 +35,10 @@ import {
   FileCheck,
   File,
   Check,
-  Camera
+  Camera,
+  Folder,
+  ArrowRight,
+  Trash2
 } from 'lucide-react';
 import {
   Account,
@@ -66,6 +69,10 @@ export const AccountsModule: React.FC = () => {
   const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
   const [isAddDocumentModalOpen, setIsAddDocumentModalOpen] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<AccountDocument | null>(null);
+
+  // Document Repository Filters
+  const [docCategoryFilter, setDocCategoryFilter] = useState<string>('all');
+  const [docSearchQuery, setDocSearchQuery] = useState<string>('');
 
   // New Account Form State
   const [formData, setFormData] = useState({
@@ -373,6 +380,21 @@ export const AccountsModule: React.FC = () => {
     });
   };
 
+  // Handle Delete Document
+  const handleDeleteDocument = (docId: string) => {
+    if (!selectedAccount) return;
+    setAccounts((prev) =>
+      prev.map((acc) =>
+        acc.id === selectedAccount.id
+          ? {
+              ...acc,
+              documents: acc.documents.filter((d) => d.id !== docId),
+            }
+          : acc
+      )
+    );
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-[#F8FAFC] overflow-hidden">
       {/* 1. Header & Indicator KPIs Panel */}
@@ -580,8 +602,8 @@ export const AccountsModule: React.FC = () => {
                         </span>
                       </div>
 
-                      {/* Contacts & Services Preview */}
-                      <div className="flex items-center gap-3 mt-1 text-[10px] text-slate-400 font-medium">
+                      {/* Contacts, Services & Docs Preview */}
+                      <div className="flex items-center gap-2.5 mt-1 text-[10px] text-slate-400 font-medium flex-wrap">
                         <span className="flex items-center gap-1">
                           <Users className="w-3 h-3 text-slate-400" />
                           {account.contacts.length} contactos
@@ -590,6 +612,11 @@ export const AccountsModule: React.FC = () => {
                         <span className="flex items-center gap-1 text-indigo-600 font-semibold">
                           <Layers className="w-3 h-3" />
                           {account.services?.length || 0} servicios
+                        </span>
+                        <span>·</span>
+                        <span className="flex items-center gap-1 text-slate-600 font-semibold">
+                          <FileText className="w-3 h-3 text-rose-500" />
+                          {account.documents?.length || 0} docs
                         </span>
                       </div>
                     </div>
@@ -702,7 +729,7 @@ export const AccountsModule: React.FC = () => {
               </div>
 
               {/* Quick Actions */}
-              <div className="grid grid-cols-4 gap-1.5 mt-3.5">
+              <div className="grid grid-cols-5 gap-1.5 mt-3.5">
                 {selectedAccount.website ? (
                   <a
                     href={selectedAccount.website}
@@ -735,6 +762,19 @@ export const AccountsModule: React.FC = () => {
                   <Mail className="w-3 h-3" />
                   <span>Correo</span>
                 </a>
+
+                <button
+                  onClick={() => setActiveTab('documents')}
+                  className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors cursor-pointer border ${
+                    activeTab === 'documents'
+                      ? 'bg-rose-50 border-rose-200 text-[#E11D48]'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-[#E11D48]'
+                  }`}
+                  title="Abrir repositorio de documentos de la cuenta"
+                >
+                  <Folder className="w-3 h-3 text-rose-500" />
+                  <span>Expediente</span>
+                </button>
 
                 <button
                   onClick={() => setIsAddContactModalOpen(true)}
@@ -804,17 +844,20 @@ export const AccountsModule: React.FC = () => {
                   </span>
                 </button>
 
-                {/* 5. Documentos Adjuntos */}
+                {/* 5. Documentos Adjuntos / Repositorio */}
                 <button
                   onClick={() => setActiveTab('documents')}
-                  className={`pb-2.5 transition-colors cursor-pointer border-b-2 shrink-0 flex items-center gap-1 ${
+                  className={`pb-2.5 transition-colors cursor-pointer border-b-2 shrink-0 flex items-center gap-1.5 ${
                     activeTab === 'documents'
                       ? 'border-[#E11D48] text-[#E11D48]'
                       : 'border-transparent hover:text-slate-800'
                   }`}
                 >
-                  <span>Documentos</span>
-                  <span className="text-[10px] bg-slate-200 px-1.5 py-0.2 rounded-full text-slate-700">
+                  <Folder className={`w-3.5 h-3.5 ${activeTab === 'documents' ? 'text-[#E11D48]' : 'text-slate-400'}`} />
+                  <span>Expediente / Docs</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    activeTab === 'documents' ? 'bg-rose-100 text-[#E11D48]' : 'bg-slate-200 text-slate-700'
+                  }`}>
                     {selectedAccount.documents?.length || 0}
                   </span>
                 </button>
@@ -895,6 +938,85 @@ export const AccountsModule: React.FC = () => {
                           {selectedAccount.email}
                         </span>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Expediente Digital / Repositorio Documental Card Preview */}
+                  <div className="bg-gradient-to-br from-slate-50 to-rose-50/20 p-3.5 rounded-xl border border-slate-200/90 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-rose-100 text-[#E11D48] flex items-center justify-center shrink-0">
+                          <Folder className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900">Expediente Documental</h4>
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            {selectedAccount.documents?.length || 0} archivos custodiados en la cuenta
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab('documents')}
+                        className="text-[11px] font-bold text-[#E11D48] hover:text-[#BE123C] flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <span>Abrir expediente</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    {selectedAccount.documents && selectedAccount.documents.length > 0 ? (
+                      <div className="space-y-1.5">
+                        {selectedAccount.documents.slice(0, 3).map((doc) => (
+                          <div
+                            key={doc.id}
+                            className="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200/70 hover:border-rose-200 transition-colors shadow-2xs"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <FileText className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                              <span className="text-xs font-medium text-slate-700 truncate">{doc.name}</span>
+                              <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-semibold shrink-0">
+                                {doc.category}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0 ml-2">
+                              <button
+                                onClick={() => setPreviewDoc(doc)}
+                                title="Previsualizar"
+                                className="p-1 text-slate-400 hover:text-[#E11D48] cursor-pointer transition-colors"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => alert(`Descargando archivo: ${doc.name}`)}
+                                title="Descargar"
+                                className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer transition-colors"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-2.5 text-center text-[11px] text-slate-400 bg-white rounded-lg border border-dashed border-slate-200">
+                        No hay documentos cargados aún en esta cuenta.
+                      </div>
+                    )}
+
+                    <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between">
+                      <button
+                        onClick={() => setIsAddDocumentModalOpen(true)}
+                        className="text-[11px] font-bold text-slate-700 hover:text-[#E11D48] flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-[#E11D48]" />
+                        <span>Subir nuevo archivo</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('documents')}
+                        className="text-[10px] text-slate-500 font-semibold hover:underline cursor-pointer"
+                      >
+                        Ver todos los {selectedAccount.documents?.length || 0} archivos &rarr;
+                      </button>
                     </div>
                   </div>
 
@@ -1078,72 +1200,240 @@ export const AccountsModule: React.FC = () => {
                 </div>
               )}
 
-              {/* ESTRUCTURA 5: Documentos Adjuntos */}
+              {/* ESTRUCTURA 5: Repositorio & Expediente Digital */}
               {activeTab === 'documents' && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
+                <div className="space-y-3.5">
+                  {/* Repository Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-100">
                     <div>
-                      <span className="text-xs font-bold text-slate-800">Expediente Digital</span>
-                      <p className="text-[10px] text-slate-400">Contratos, constancias fiscales, cotizaciones y acuerdos</p>
+                      <div className="flex items-center gap-1.5">
+                        <Folder className="w-4 h-4 text-[#E11D48]" />
+                        <span className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                          Repositorio & Expediente Digital
+                        </span>
+                        <span className="text-[10px] font-extrabold px-1.5 py-0.2 bg-rose-50 text-[#E11D48] rounded-full border border-rose-100">
+                          {selectedAccount.documents?.length || 0} archivos
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        Custodia de contratos, actas, constancias fiscales del SAT y cotizaciones oficiales.
+                      </p>
                     </div>
+
                     <button
                       onClick={() => setIsAddDocumentModalOpen(true)}
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#E11D48] hover:text-[#BE123C] cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#E11D48] hover:bg-[#BE123C] text-white text-[11px] font-bold rounded-lg shadow-xs transition-colors cursor-pointer shrink-0 self-start sm:self-auto"
                     >
-                      <Upload className="w-3 h-3" />
+                      <Upload className="w-3.5 h-3.5" />
                       <span>Subir documento</span>
                     </button>
                   </div>
 
-                  {selectedAccount.documents && selectedAccount.documents.map((doc) => (
-                    <div
-                      key={doc.id}
-                      className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 hover:bg-slate-100/70 transition-colors flex items-center justify-between gap-3 group"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-rose-50 text-[#E11D48] flex items-center justify-center shrink-0">
-                          <FileText className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-xs font-bold text-slate-900 truncate group-hover:text-[#E11D48] transition-colors">
-                            {doc.name}
-                          </h4>
-                          <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
-                            <span className="font-semibold text-slate-600">{doc.category}</span>
-                            <span>·</span>
-                            <span>{doc.size}</span>
-                            <span>·</span>
-                            <span>Subido el {doc.uploadedAt} por {doc.uploadedBy}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1 shrink-0">
+                  {/* Repository Search & Category Filter Toolbar */}
+                  <div className="space-y-2">
+                    {/* Search Bar */}
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={docSearchQuery}
+                        onChange={(e) => setDocSearchQuery(e.target.value)}
+                        placeholder="Buscar archivo por nombre, tipo o autor..."
+                        className="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200/90 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#E11D48] transition-all"
+                      />
+                      {docSearchQuery && (
                         <button
-                          onClick={() => setPreviewDoc(doc)}
-                          title="Previsualizar documento"
-                          className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-[#E11D48] transition-colors cursor-pointer"
+                          onClick={() => setDocSearchQuery('')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                         >
-                          <Eye className="w-3 h-3" />
+                          <X className="w-3.5 h-3.5" />
                         </button>
-                        <button
-                          onClick={() => alert(`Descargando archivo: ${doc.name}`)}
-                          title="Descargar documento"
-                          className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-[#E11D48] transition-colors cursor-pointer"
-                        >
-                          <Download className="w-3 h-3" />
-                        </button>
-                      </div>
+                      )}
                     </div>
-                  ))}
 
-                  {(!selectedAccount.documents || selectedAccount.documents.length === 0) && (
-                    <div className="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                      <Paperclip className="w-6 h-6 mx-auto mb-2 text-slate-300" />
-                      <p className="font-semibold">Sin documentos adjuntos</p>
-                      <p className="text-[11px] mt-0.5">Adjunta contratos firmados o constancias de situación fiscal.</p>
+                    {/* Filter Pills */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px]">
+                      {[
+                        { id: 'all', label: 'Todos' },
+                        { id: 'Contrato', label: 'Contratos' },
+                        { id: 'Fiscal / SAT', label: 'Fiscal / SAT' },
+                        { id: 'Cotización', label: 'Cotizaciones' },
+                        { id: 'Legal', label: 'Legal' },
+                        { id: 'Otro', label: 'Otros' }
+                      ].map((tab) => {
+                        const count =
+                          tab.id === 'all'
+                            ? selectedAccount.documents?.length || 0
+                            : (selectedAccount.documents || []).filter((d) =>
+                                d.category.toLowerCase().includes(tab.id.toLowerCase())
+                              ).length;
+
+                        return (
+                          <button
+                            key={tab.id}
+                            onClick={() => setDocCategoryFilter(tab.id)}
+                            className={`px-2.5 py-1 rounded-lg font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1 ${
+                              docCategoryFilter === tab.id
+                                ? 'bg-slate-900 text-white shadow-2xs'
+                                : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                            }`}
+                          >
+                            <span>{tab.label}</span>
+                            <span
+                              className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${
+                                docCategoryFilter === tab.id
+                                  ? 'bg-white/20 text-white'
+                                  : 'bg-white text-slate-500 border border-slate-200/60'
+                              }`}
+                            >
+                              {count}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
+
+                  {/* Documents List */}
+                  {(() => {
+                    const filteredDocs = (selectedAccount.documents || []).filter((doc) => {
+                      const matchesCat =
+                        docCategoryFilter === 'all' ||
+                        doc.category.toLowerCase().includes(docCategoryFilter.toLowerCase());
+                      const matchesSearch =
+                        !docSearchQuery.trim() ||
+                        doc.name.toLowerCase().includes(docSearchQuery.toLowerCase()) ||
+                        doc.category.toLowerCase().includes(docSearchQuery.toLowerCase()) ||
+                        (doc.uploadedBy && doc.uploadedBy.toLowerCase().includes(docSearchQuery.toLowerCase()));
+                      return matchesCat && matchesSearch;
+                    });
+
+                    if (filteredDocs.length === 0) {
+                      return (
+                        <div className="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-2">
+                          <Paperclip className="w-7 h-7 mx-auto text-slate-300" />
+                          <p className="text-xs font-bold text-slate-700">
+                            {docSearchQuery || docCategoryFilter !== 'all'
+                              ? 'No se encontraron documentos con este criterio'
+                              : 'No hay documentos en el expediente de esta cuenta'}
+                          </p>
+                          <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+                            {docSearchQuery || docCategoryFilter !== 'all'
+                              ? 'Prueba modificando el texto de búsqueda o cambiando el filtro de categoría.'
+                              : 'Agrega contratos firmados, constancias de situación fiscal o cotizaciones para mantener el expediente al día.'}
+                          </p>
+                          {docSearchQuery || docCategoryFilter !== 'all' ? (
+                            <button
+                              onClick={() => {
+                                setDocSearchQuery('');
+                                setDocCategoryFilter('all');
+                              }}
+                              className="mt-2 text-xs font-bold text-[#E11D48] hover:underline cursor-pointer"
+                            >
+                              Restablecer filtros
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => setIsAddDocumentModalOpen(true)}
+                              className="mt-2 inline-flex items-center gap-1 px-3 py-1.5 bg-[#E11D48] text-white text-xs font-bold rounded-lg cursor-pointer hover:bg-[#BE123C]"
+                            >
+                              <Upload className="w-3 h-3" />
+                              <span>Subir primer documento</span>
+                            </button>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-2">
+                        {filteredDocs.map((doc) => {
+                          const isContract = doc.category.toLowerCase().includes('contrato');
+                          const isFiscal = doc.category.toLowerCase().includes('fiscal');
+                          const isQuote = doc.category.toLowerCase().includes('cotiza');
+                          const isLegal = doc.category.toLowerCase().includes('legal');
+
+                          const categoryBadgeColor = isContract
+                            ? 'bg-rose-50 text-[#E11D48] border-rose-100'
+                            : isFiscal
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                            : isQuote
+                            ? 'bg-amber-50 text-amber-700 border-amber-100'
+                            : isLegal
+                            ? 'bg-indigo-50 text-indigo-700 border-indigo-100'
+                            : 'bg-slate-100 text-slate-600 border-slate-200';
+
+                          return (
+                            <div
+                              key={doc.id}
+                              className="p-3 bg-white rounded-xl border border-slate-200/90 hover:border-rose-200 hover:shadow-2xs transition-all flex items-center justify-between gap-3 group"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                  {doc.fileType === 'xlsx' || doc.name.endsWith('.xlsx') ? (
+                                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                                  ) : isContract ? (
+                                    <FileCheck className="w-4 h-4 text-[#E11D48]" />
+                                  ) : isFiscal ? (
+                                    <FileText className="w-4 h-4 text-emerald-600" />
+                                  ) : (
+                                    <File className="w-4 h-4 text-slate-600" />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="text-xs font-bold text-slate-900 truncate group-hover:text-[#E11D48] transition-colors">
+                                      {doc.name}
+                                    </h4>
+                                    <span
+                                      className={`text-[9px] font-bold px-1.5 py-0.2 rounded-md border shrink-0 ${categoryBadgeColor}`}
+                                    >
+                                      {doc.category}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                                    <span className="font-semibold text-slate-600">{doc.size}</span>
+                                    <span>·</span>
+                                    <span>Subido el {doc.uploadedAt}</span>
+                                    <span>·</span>
+                                    <span>Por {doc.uploadedBy}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  onClick={() => setPreviewDoc(doc)}
+                                  title="Previsualizar documento"
+                                  className="p-1.5 bg-slate-50 hover:bg-rose-50 border border-slate-200 rounded-lg text-slate-600 hover:text-[#E11D48] transition-colors cursor-pointer"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => alert(`Descargando archivo: ${doc.name}`)}
+                                  title="Descargar documento"
+                                  className="p-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`¿Estás seguro de eliminar el documento "${doc.name}" del expediente?`)) {
+                                      handleDeleteDocument(doc.id);
+                                    }
+                                  }}
+                                  title="Eliminar documento del expediente"
+                                  className="p-1.5 bg-slate-50 hover:bg-red-50 border border-slate-200 rounded-lg text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
