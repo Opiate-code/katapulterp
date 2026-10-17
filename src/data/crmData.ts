@@ -25,6 +25,17 @@ export interface ActivityItem {
   title: string;
   subtitle: string;
   type: 'call' | 'meeting' | 'demo' | 'closing';
+  durationMinutes?: number;
+  contactName?: string;
+  contactRole?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  accountName?: string;
+  location?: string;
+  meetingLink?: string;
+  notes?: string;
+  priority?: 'alta' | 'media' | 'baja';
+  repName?: string;
 }
 
 export interface RecentContactItem {
@@ -264,29 +275,71 @@ export const UPCOMING_ACTIVITIES: ActivityItem[] = [
     id: 'act-1',
     time: '09:00',
     title: 'Llamada con Grupo Innovar',
-    subtitle: 'Seguimiento propuesta',
-    type: 'call'
+    subtitle: 'Seguimiento propuesta comercial',
+    type: 'call',
+    durationMinutes: 30,
+    contactName: 'María López',
+    contactRole: 'CEO & Co-Founder',
+    contactPhone: '+52 55 4123 8901',
+    contactEmail: 'm.lopez@innovar.com',
+    accountName: 'Grupo Innovar',
+    location: 'Llamada Telefónica',
+    priority: 'alta',
+    repName: 'Ana Torres',
+    notes: 'Confirmar si finanzas aprobó la cotización v2 con el descuento anual y definir fecha para firma de contrato.'
   },
   {
     id: 'act-2',
     time: '11:30',
     title: 'Reunión con Nexos S.A.',
-    subtitle: 'Presentación de solución',
-    type: 'meeting'
+    subtitle: 'Presentación de solución técnica',
+    type: 'meeting',
+    durationMinutes: 45,
+    contactName: 'Carlos Méndez',
+    contactRole: 'Gerente Comercial',
+    contactPhone: '+52 81 8345 6789',
+    contactEmail: 'carlos.mendez@nexos.com.mx',
+    accountName: 'Nexos S.A.',
+    location: 'Google Meet',
+    meetingLink: 'https://meet.google.com/nex-sol-kat',
+    priority: 'alta',
+    repName: 'Ana Torres',
+    notes: 'Presentación enfocada en el módulo de embudo de ventas y trazabilidad para su equipo de 18 asesores comerciales.'
   },
   {
     id: 'act-3',
     time: '14:00',
     title: 'Demo con Soluciones del Sur',
-    subtitle: 'Plataforma + Q&A',
-    type: 'demo'
+    subtitle: 'Demostración plataforma + Q&A',
+    type: 'demo',
+    durationMinutes: 60,
+    contactName: 'Laura Gómez',
+    contactRole: 'Gerente de Operaciones',
+    contactPhone: '+52 99 9123 4567',
+    contactEmail: 'lgomez@solucionesdelsur.com',
+    accountName: 'Soluciones del Sur',
+    location: 'Zoom Video',
+    meetingLink: 'https://zoom.us/j/8892102948',
+    priority: 'media',
+    repName: 'Ana Torres',
+    notes: 'Revisión en vivo de la captura de leads desde landing page y flujo de asignación a representantes.'
   },
   {
     id: 'act-4',
     time: '16:30',
     title: 'Llamada de cierre – Delta Corp',
-    subtitle: 'Negociación',
-    type: 'closing'
+    subtitle: 'Negociación contractual y SLA',
+    type: 'closing',
+    durationMinutes: 30,
+    contactName: 'Jorge Castillo',
+    contactRole: 'Director General',
+    contactPhone: '+52 55 5890 1234',
+    contactEmail: 'jcastillo@deltacorp.com',
+    accountName: 'Delta Corp',
+    location: 'Llamada Telefónica',
+    priority: 'alta',
+    repName: 'Ana Torres',
+    notes: 'Afinar la cláusula de soporte 24/7 y confirmar la transferencia inicial para dar inicio al kickoff.'
   }
 ];
 

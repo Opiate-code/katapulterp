@@ -85,7 +85,7 @@ export function App() {
 
             {/* Right Section (~25% width) */}
             <aside className="w-full xl:w-72 2xl:w-80 shrink-0 h-full min-h-0 flex flex-col">
-              <RightSidebarWidgets />
+              <RightSidebarWidgets onNavigate={(nav) => setActiveNav(nav)} />
             </aside>
           </main>
         )}
