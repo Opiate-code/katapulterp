@@ -43,6 +43,7 @@ export const ContactsModule: React.FC = () => {
   // Modals
   const [isNewContactOpen, setIsNewContactOpen] = useState(false);
   const [isNewInteractionOpen, setIsNewInteractionOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   // Form states for new contact
   const [formData, setFormData] = useState({
@@ -62,6 +63,16 @@ export const ContactsModule: React.FC = () => {
     type: 'call' as 'call' | 'email' | 'meeting' | 'note',
     title: '',
     description: ''
+  });
+
+  // Form state for scheduling
+  const [scheduleForm, setScheduleForm] = useState({
+    title: '',
+    type: 'meeting' as 'meeting' | 'call',
+    date: new Date().toISOString().split('T')[0],
+    time: '11:00',
+    platform: 'Google Meet',
+    notes: ''
   });
 
   // Unique accounts & tags for filter options
@@ -169,6 +180,52 @@ export const ContactsModule: React.FC = () => {
 
     setIsNewInteractionOpen(false);
     setInteractionForm({ type: 'call', title: '', description: '' });
+  };
+
+  // Handle scheduling event
+  const handleScheduleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!scheduleForm.title || !selectedContact) return;
+
+    const newEvent: ContactEvent = {
+      id: `ev-${Date.now()}`,
+      title: scheduleForm.title,
+      date: scheduleForm.date,
+      time: scheduleForm.time,
+      type: scheduleForm.type
+    };
+
+    const autoInteraction: ContactInteraction = {
+      id: `int-${Date.now()}`,
+      type: scheduleForm.type === 'call' ? 'call' : 'meeting',
+      title: `Compromiso agendado: ${scheduleForm.title}`,
+      date: 'Justo ahora',
+      description: `Programado para ${scheduleForm.date} a las ${scheduleForm.time} vía ${scheduleForm.platform}. ${scheduleForm.notes ? `Notas: ${scheduleForm.notes}` : ''}`,
+      user: 'Ana Torres'
+    };
+
+    setContacts((prev) =>
+      prev.map((c) =>
+        c.id === selectedContact.id
+          ? {
+              ...c,
+              upcomingEvents: [newEvent, ...c.upcomingEvents],
+              interactions: [autoInteraction, ...c.interactions]
+            }
+          : c
+       )
+    );
+
+    setIsScheduleModalOpen(false);
+    setActiveTab('calendar');
+    setScheduleForm({
+      title: '',
+      type: 'meeting',
+      date: new Date().toISOString().split('T')[0],
+      time: '11:00',
+      platform: 'Google Meet',
+      notes: ''
+    });
   };
 
   return (
@@ -418,7 +475,7 @@ export const ContactsModule: React.FC = () => {
                   <span>Nota</span>
                 </button>
                 <button
-                  onClick={() => setActiveTab('calendar')}
+                  onClick={() => setIsScheduleModalOpen(true)}
                   className="flex items-center justify-center gap-1 py-1.5 bg-[#E11D48] text-white rounded-lg text-[10px] font-bold hover:bg-[#BE123C] transition-colors cursor-pointer"
                 >
                   <Calendar className="w-3 h-3" />
@@ -641,7 +698,10 @@ export const ContactsModule: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-700">Próximos compromisos</span>
-                    <button className="text-[11px] font-bold text-[#E11D48] hover:text-[#BE123C] cursor-pointer">
+                    <button
+                      onClick={() => setIsScheduleModalOpen(true)}
+                      className="text-[11px] font-bold text-[#E11D48] hover:text-[#BE123C] cursor-pointer"
+                    >
                       + Agendar cita
                     </button>
                   </div>
@@ -910,6 +970,145 @@ export const ContactsModule: React.FC = () => {
                   className="px-4 py-2 bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs"
                 >
                   Registrar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Agendar Compromiso / Cita */}
+      {isScheduleModalOpen && selectedContact && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in duration-200">
+            <div className="flex justify-between items-start mb-4 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center text-[#E11D48] shrink-0">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 leading-tight">Agendar compromiso</h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Con {selectedContact.fullName} · {selectedContact.account}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsScheduleModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleScheduleSubmit} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Tipo de compromiso</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setScheduleForm({ ...scheduleForm, type: 'meeting' })}
+                    className={`flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
+                      scheduleForm.type === 'meeting'
+                        ? 'bg-[#E11D48] text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <Video className="w-3.5 h-3.5" />
+                    <span>Reunión / Demo</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setScheduleForm({ ...scheduleForm, type: 'call' })}
+                    className={`flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
+                      scheduleForm.type === 'call'
+                        ? 'bg-[#E11D48] text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>Llamada de seguimiento</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Título o motivo de la cita *</label>
+                <input
+                  type="text"
+                  required
+                  value={scheduleForm.title}
+                  onChange={(e) => setScheduleForm({ ...scheduleForm, title: e.target.value })}
+                  placeholder="Ej. Presentación de solución y cotización"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Fecha *</label>
+                  <input
+                    type="date"
+                    required
+                    value={scheduleForm.date}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, date: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Hora *</label>
+                  <input
+                    type="time"
+                    required
+                    value={scheduleForm.time}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, time: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Canal / Medio</label>
+                <select
+                  value={scheduleForm.platform}
+                  onChange={(e) => setScheduleForm({ ...scheduleForm, platform: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                >
+                  <option value="Google Meet">Google Meet</option>
+                  <option value="Zoom">Zoom</option>
+                  <option value="Microsoft Teams">Microsoft Teams</option>
+                  <option value="Llamada celular">Llamada celular directa</option>
+                  <option value="Oficinas del cliente">Presencial en oficinas del cliente</option>
+                  <option value="Nuestras oficinas">Presencial en nuestras oficinas</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Notas previas o agenda</label>
+                <textarea
+                  rows={2}
+                  value={scheduleForm.notes}
+                  onChange={(e) => setScheduleForm({ ...scheduleForm, notes: e.target.value })}
+                  placeholder="Temas a revisar, participantes adicionales, requerimientos..."
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#E11D48]"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsScheduleModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs"
+                >
+                  Guardar en calendario
                 </button>
               </div>
             </form>
