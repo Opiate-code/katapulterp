@@ -87,6 +87,7 @@ export const ActivitiesModule: React.FC<ActivitiesModuleProps> = ({
     description: '',
     assignedUser: 'Ana Gómez',
     tags: 'Comercial, Seguimiento',
+    calendarSyncTarget: 'google' as 'google' | 'outlook' | 'none',
   });
 
   const todayStr = '2026-10-17';
@@ -203,6 +204,15 @@ export const ActivitiesModule: React.FC<ActivitiesModuleProps> = ({
 
     setActivities((prev) => [newAct, ...prev]);
     setIsNewActivityModalOpen(false);
+
+    // Sincronización automática de calendario al momento de la creación
+    if (newFormData.calendarSyncTarget === 'google') {
+      const gcalUrl = generateGoogleCalendarUrl(newAct);
+      window.open(gcalUrl, '_blank');
+    } else if (newFormData.calendarSyncTarget === 'outlook') {
+      downloadActivityIcs(newAct);
+    }
+
     // Reset form
     setNewFormData({
       title: '',
@@ -221,6 +231,7 @@ export const ActivitiesModule: React.FC<ActivitiesModuleProps> = ({
       description: '',
       assignedUser: 'Ana Gómez',
       tags: 'Comercial, Seguimiento',
+      calendarSyncTarget: 'google',
     });
   };
 
@@ -524,30 +535,41 @@ export const ActivitiesModule: React.FC<ActivitiesModuleProps> = ({
               </a>
             )}
 
-            {/* Google Calendar Link */}
-            <a
-              href={generateGoogleCalendarUrl(item)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-              title="Sincronizar con Google Calendar"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+            {/* Google Calendar & .ICS Sync - Solo para actividades NO completadas */}
+            {!isCompleted && (
+              <>
+                <a
+                  href={generateGoogleCalendarUrl(item)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                  title="Sincronizar con Google Calendar"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
 
-            {/* .ICS Download */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                downloadActivityIcs(item);
-              }}
-              className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-              title="Descargar archivo .ics para Outlook/Apple"
-            >
-              <Download className="w-3.5 h-3.5" />
-            </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    downloadActivityIcs(item);
+                  }}
+                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                  title="Descargar archivo .ics para Outlook/Apple"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
+
+            {/* Badge de estado cuando ya fue cumplida */}
+            {isCompleted && (
+              <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 rounded-lg border border-emerald-200/80 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                Cumplida
+              </span>
+            )}
 
             {/* Quick Reschedule if Overdue */}
             {isOverdueAlert && (
@@ -1287,25 +1309,32 @@ export const ActivitiesModule: React.FC<ActivitiesModuleProps> = ({
 
             {/* Modal Footer / Calendar Sync CTAs */}
             <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 shrink-0">
-              <div className="flex items-center gap-2">
-                <a
-                  href={generateGoogleCalendarUrl(selectedActivity)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <ExternalLink className="w-3.5 h-3.5 text-rose-500" />
-                  <span>Google Calendar</span>
-                </a>
+              {selectedActivity.status === 'completada' ? (
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Actividad completada y archivada en el historial</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <a
+                    href={generateGoogleCalendarUrl(selectedActivity)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Google Calendar</span>
+                  </a>
 
-                <button
-                  onClick={() => downloadActivityIcs(selectedActivity)}
-                  className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <Download className="w-3.5 h-3.5 text-blue-500" />
-                  <span>Descargar .ICS</span>
-                </button>
-              </div>
+                  <button
+                    onClick={() => downloadActivityIcs(selectedActivity)}
+                    className="px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Download className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Descargar .ICS</span>
+                  </button>
+                </div>
+              )}
 
               <button
                 onClick={() => setSelectedActivity(null)}
@@ -1563,6 +1592,67 @@ export const ActivitiesModule: React.FC<ActivitiesModuleProps> = ({
                   }
                   className="w-full px-3 py-1.5 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E11D48]"
                 />
+              </div>
+
+              {/* Sincronización Automática con Calendario */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-extrabold text-slate-800">
+                    Sincronización Automática con Calendario
+                  </span>
+                  <span className="text-[10px] text-[#E11D48] font-bold bg-rose-50 px-2 py-0.5 rounded-md">
+                    Al guardar cita
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <label className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all ${
+                    newFormData.calendarSyncTarget === 'google'
+                      ? 'bg-white border-[#E11D48] text-slate-900 shadow-2xs font-bold'
+                      : 'border-slate-200 text-slate-600 hover:bg-white'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="calendarSync"
+                      value="google"
+                      checked={newFormData.calendarSyncTarget === 'google'}
+                      onChange={() => setNewFormData({ ...newFormData, calendarSyncTarget: 'google' })}
+                      className="text-[#E11D48] focus:ring-[#E11D48]"
+                    />
+                    <span className="text-[11px]">Google Calendar</span>
+                  </label>
+
+                  <label className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all ${
+                    newFormData.calendarSyncTarget === 'outlook'
+                      ? 'bg-white border-[#E11D48] text-slate-900 shadow-2xs font-bold'
+                      : 'border-slate-200 text-slate-600 hover:bg-white'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="calendarSync"
+                      value="outlook"
+                      checked={newFormData.calendarSyncTarget === 'outlook'}
+                      onChange={() => setNewFormData({ ...newFormData, calendarSyncTarget: 'outlook' })}
+                      className="text-[#E11D48] focus:ring-[#E11D48]"
+                    />
+                    <span className="text-[11px]">Outlook (.ICS)</span>
+                  </label>
+
+                  <label className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all ${
+                    newFormData.calendarSyncTarget === 'none'
+                      ? 'bg-white border-[#E11D48] text-slate-900 shadow-2xs font-bold'
+                      : 'border-slate-200 text-slate-600 hover:bg-white'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="calendarSync"
+                      value="none"
+                      checked={newFormData.calendarSyncTarget === 'none'}
+                      onChange={() => setNewFormData({ ...newFormData, calendarSyncTarget: 'none' })}
+                      className="text-[#E11D48] focus:ring-[#E11D48]"
+                    />
+                    <span className="text-[11px]">Solo en ERP</span>
+                  </label>
+                </div>
               </div>
 
               <div className="pt-2 flex justify-end gap-2 border-t border-slate-100">
