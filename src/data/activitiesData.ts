@@ -339,6 +339,12 @@ export const PRIORITY_CONFIG: Record<
   },
 };
 
+export function generateMeetLink(prefix = 'kat'): string {
+  const segment1 = Math.random().toString(36).substring(2, 5);
+  const segment2 = Math.random().toString(36).substring(2, 6);
+  return `https://meet.google.com/${prefix}-${segment1}-${segment2}`;
+}
+
 export function generateGoogleCalendarUrl(activity: {
   title: string;
   dueDate: string;
@@ -346,6 +352,10 @@ export function generateGoogleCalendarUrl(activity: {
   durationMinutes: number;
   description: string;
   location: string;
+  meetingLink?: string;
+  contactEmail?: string;
+  contactName?: string;
+  accountName?: string;
 }): string {
   const [year, month, day] = activity.dueDate.split('-');
   const [hour, minute] = activity.dueTime.split(':');
@@ -362,14 +372,29 @@ export function generateGoogleCalendarUrl(activity: {
     return d.toISOString().replace(/-|:|\.\d\d\d/g, '');
   };
 
+  // Generar o usar el enlace directo de Google Meet
+  const meetLink = activity.meetingLink || generateMeetLink();
+
+  const detailsList = [
+    `🎥 Enlace de Google Meet: ${meetLink}`,
+    activity.contactName ? `👤 Contacto: ${activity.contactName}` : '',
+    activity.accountName ? `🏢 Cuenta: ${activity.accountName}` : '',
+    activity.description ? `\n📝 Objetivos de la reunión:\n${activity.description}` : '',
+    `\n---\nAgendado automáticamente desde Katapult Marketing Studio ERP`
+  ].filter(Boolean);
+
   const datesParam = `${formatGCalDate(startDate)}/${formatGCalDate(endDate)}`;
   const params = new URLSearchParams({
     action: 'TEMPLATE',
-    text: `[Katapult ERP] ${activity.title}`,
+    text: `[Katapult] ${activity.title}`,
     dates: datesParam,
-    details: activity.description,
-    location: activity.location || 'Online',
+    details: detailsList.join('\n'),
+    location: meetLink,
   });
+
+  if (activity.contactEmail) {
+    params.set('add', activity.contactEmail);
+  }
 
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
@@ -381,6 +406,10 @@ export function downloadActivityIcs(activity: {
   durationMinutes: number;
   description: string;
   location: string;
+  meetingLink?: string;
+  contactEmail?: string;
+  contactName?: string;
+  accountName?: string;
 }) {
   const [year, month, day] = activity.dueDate.split('-');
   const [hour, minute] = activity.dueTime.split(':');
@@ -394,15 +423,23 @@ export function downloadActivityIcs(activity: {
   const endDate = new Date(startDate.getTime() + activity.durationMinutes * 60000);
 
   const formatIcs = (d: Date) => d.toISOString().replace(/-|:|\.\d\d\d/g, '');
+  const meetLink = activity.meetingLink || generateMeetLink();
+
+  const icsDescription = [
+    `Enlace de Google Meet: ${meetLink}`,
+    activity.contactName ? `Contacto: ${activity.contactName}` : '',
+    activity.accountName ? `Cuenta: ${activity.accountName}` : '',
+    activity.description ? `Notas: ${activity.description}` : '',
+  ].filter(Boolean).join('\\n');
 
   const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Katapult Marketing Studio//CRM ERP//ES
 CALSCALE:GREGORIAN
 BEGIN:VEVENT
-SUMMARY:[Katapult ERP] ${activity.title}
-DESCRIPTION:${activity.description.replace(/\n/g, '\\n')}
-LOCATION:${activity.location || 'Online'}
+SUMMARY:[Katapult] ${activity.title}
+DESCRIPTION:${icsDescription.replace(/\n/g, '\\n')}
+LOCATION:${meetLink}
 DTSTART:${formatIcs(startDate)}
 DTEND:${formatIcs(endDate)}
 STATUS:CONFIRMED
@@ -413,7 +450,7 @@ END:VCALENDAR`;
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `katapult-actividad-${activity.dueDate}-${activity.dueTime.replace(':', '')}.ics`;
+  a.download = `katapult-cita-${activity.dueDate}-${activity.dueTime.replace(':', '')}.ics`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

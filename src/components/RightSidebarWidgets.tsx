@@ -51,7 +51,7 @@ interface RightSidebarWidgetsProps {
 export const RightSidebarWidgets: React.FC<RightSidebarWidgetsProps> = ({ onNavigate }) => {
   const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
 
-  // Helper for Google Calendar Link
+  // Helper for Google Calendar Link with Google Meet
   const getGoogleCalendarUrl = (act: ActivityItem) => {
     const today = new Date();
     const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
@@ -63,12 +63,15 @@ export const RightSidebarWidgets: React.FC<RightSidebarWidgetsProps> = ({ onNavi
     const finalMinutes = endMinutes % 60;
     const endStr = `${dateStr}T${String(endHour).padStart(2, '0')}${String(finalMinutes).padStart(2, '0')}00`;
 
+    const meetLink = act.meetingLink || `https://meet.google.com/kat-${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 6)}`;
+    const details = `🎥 Enlace de Google Meet: ${meetLink}\n\nContacto: ${act.subtitle}\n${act.notes ? `Notas: ${act.notes}\n\n` : ''}---\nAgendado desde Katapult Marketing Studio ERP`;
+
     const params = new URLSearchParams({
       action: 'TEMPLATE',
       text: `[Katapult] ${act.title}`,
       dates: `${startStr}/${endStr}`,
-      details: act.notes || act.subtitle,
-      location: act.location || 'Online',
+      details: details,
+      location: meetLink,
     });
 
     return `https://calendar.google.com/calendar/render?${params.toString()}`;

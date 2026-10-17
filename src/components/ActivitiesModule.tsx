@@ -27,7 +27,8 @@ import {
   X,
   MapPin,
   Flame,
-  AlertTriangle
+  AlertTriangle,
+  Copy
 } from 'lucide-react';
 import {
   Activity,
@@ -38,6 +39,7 @@ import {
   PRIORITY_CONFIG,
   generateGoogleCalendarUrl,
   downloadActivityIcs,
+  generateMeetLink,
 } from '../data/activitiesData';
 
 interface ActivitiesModuleProps {
@@ -91,6 +93,18 @@ export const ActivitiesModule: React.FC<ActivitiesModuleProps> = ({
   });
 
   const todayStr = '2026-10-17';
+
+  // Open modal with fresh Google Meet link
+  const handleOpenNewActivityModal = () => {
+    const meet = generateMeetLink();
+    setNewFormData((prev) => ({
+      ...prev,
+      meetingLink: meet,
+      location: 'Google Meet',
+      calendarSyncTarget: 'google',
+    }));
+    setIsNewActivityModalOpen(true);
+  };
 
   // Toggle Complete / Incomplete
   const handleToggleComplete = (id: string, e?: React.MouseEvent) => {
@@ -639,7 +653,7 @@ export const ActivitiesModule: React.FC<ActivitiesModuleProps> = ({
           </div>
 
           <button
-            onClick={() => setIsNewActivityModalOpen(true)}
+            onClick={handleOpenNewActivityModal}
             className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
@@ -1653,6 +1667,40 @@ export const ActivitiesModule: React.FC<ActivitiesModuleProps> = ({
                     <span className="text-[11px]">Solo en ERP</span>
                   </label>
                 </div>
+
+                {/* Google Meet Preview & Regeneration */}
+                {newFormData.calendarSyncTarget === 'google' && (
+                  <div className="mt-2.5 p-2.5 bg-purple-50 rounded-lg border border-purple-200 flex items-center justify-between gap-2 animate-in fade-in duration-150">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-6 h-6 rounded-md bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <Video className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[10px] font-bold text-purple-900 block leading-tight">
+                          Enlace de Google Meet generado automáticamente
+                        </span>
+                        <span className="text-[11px] font-mono font-bold text-purple-700 truncate block">
+                          {newFormData.meetingLink || 'https://meet.google.com/kat-crm-meet'}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newMeet = generateMeetLink();
+                        setNewFormData({
+                          ...newFormData,
+                          meetingLink: newMeet,
+                          location: 'Google Meet',
+                        });
+                      }}
+                      className="px-2 py-1 bg-white hover:bg-purple-100 text-purple-700 border border-purple-200 rounded text-[10px] font-bold cursor-pointer shrink-0 transition-colors"
+                      title="Generar nueva sala de Google Meet"
+                    >
+                      Regenerar
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="pt-2 flex justify-end gap-2 border-t border-slate-100">

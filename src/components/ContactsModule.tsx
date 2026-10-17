@@ -217,14 +217,16 @@ export const ContactsModule: React.FC = () => {
     };
 
     const datesParam = `${formatGDate(baseDate)}/${formatGDate(endDate)}`;
-    const details = `Reunión agendada desde Katapult Marketing Studio.\n\nContacto: ${contact.fullName}\nEmpresa: ${contact.account}\nCargo: ${contact.role}\nTeléfono: ${contact.primaryPhone}\n\n${notes ? `Notas: ${notes}` : ''}`;
+    const meetCode = `kat-${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 6)}`;
+    const meetLink = `https://meet.google.com/${meetCode}`;
+    const details = `🎥 Enlace de Google Meet: ${meetLink}\n\n👤 Contacto: ${contact.fullName}\n🏢 Empresa: ${contact.account}\n💼 Cargo: ${contact.role}\n📞 Teléfono: ${contact.primaryPhone}\n\n${notes ? `📝 Notas: ${notes}\n\n` : ''}---\nAgendado automáticamente desde Katapult Marketing Studio ERP`;
 
     const params = new URLSearchParams({
       action: 'TEMPLATE',
-      text: title,
+      text: `[Katapult] ${title}`,
       dates: datesParam,
       details: details,
-      location: platform || 'Google Meet',
+      location: meetLink,
       add: contact.email
     });
 
