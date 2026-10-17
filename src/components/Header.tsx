@@ -1,25 +1,28 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Search,
   Bell,
   Calendar,
   ChevronDown,
-  CheckCircle2,
-  Clock,
   Target,
   Users,
   Building2,
-  ExternalLink,
-  Check,
-  AlertTriangle,
+  CalendarDays,
+  X,
+  Settings,
   ArrowRight,
   Globe,
   Share2,
-  X,
-  Settings,
-  LogOut,
-  UserCheck
+  AlertTriangle,
+  Sparkles,
+  Phone,
+  Mail,
+  Tag
 } from 'lucide-react';
+import { INITIAL_CONTACTS } from '../data/contactsData';
+import { INITIAL_ACCOUNTS } from '../data/accountsData';
+import { INITIAL_DETAILED_OPPORTUNITIES } from '../data/opportunitiesData';
+import { INITIAL_ACTIVITIES } from '../data/activitiesData';
 
 interface HeaderProps {
   userName?: string;
@@ -38,43 +41,27 @@ interface NotificationItem {
   targetNav: string;
 }
 
-interface SearchResultItem {
+export interface UniversalSearchItem {
   id: string;
   title: string;
   subtitle: string;
+  extraInfo?: string;
   category: 'Contactos' | 'Cuentas' | 'Oportunidades' | 'Actividades';
   targetNav: string;
+  avatarOrIcon?: string;
   badge?: string;
+  searchableBlob: string; // Precomputed normalized string for instant matching
 }
 
-const GLOBAL_SEARCH_ITEMS: SearchResultItem[] = [
-  // Contactos
-  { id: 'c-1', title: 'Carlos Mendoza', subtitle: 'Director de Tecnología · InnovaTech Soluciones', category: 'Contactos', targetNav: 'contactos', badge: 'Contacto' },
-  { id: 'c-2', title: 'Mariana Silva', subtitle: 'Gerente de Compras · Grupo Salinas & Asoc.', category: 'Contactos', targetNav: 'contactos', badge: 'Contacto' },
-  { id: 'c-3', title: 'Roberto Gómez', subtitle: 'CEO · Logística Avanzada del Norte', category: 'Contactos', targetNav: 'contactos', badge: 'Contacto' },
-  { id: 'c-4', title: 'Dra. Sofía Mendoza', subtitle: 'Directora Médica · Clínica San Rafael', category: 'Contactos', targetNav: 'contactos', badge: 'Particular' },
-  { id: 'c-5', title: 'Carlos Eduardo Ramírez', subtitle: 'Inversionista Privado · Inversiones Privadas', category: 'Contactos', targetNav: 'contactos', badge: 'Particular VIP' },
-  { id: 'c-6', title: 'Elena Morales', subtitle: 'VP de Operaciones · BioSalud Farmacéutica', category: 'Contactos', targetNav: 'contactos', badge: 'Contacto' },
-  { id: 'c-7', title: 'Javier Torres', subtitle: 'Director Comercial · UrbanStyle Retail', category: 'Contactos', targetNav: 'contactos', badge: 'Contacto' },
-
-  // Cuentas
-  { id: 'a-1', title: 'InnovaTech Soluciones', subtitle: 'Empresa B2B · Software & Cloud · $1,450,000 LTV', category: 'Cuentas', targetNav: 'cuentas', badge: 'Empresa' },
-  { id: 'a-2', title: 'Grupo Salinas & Asociados', subtitle: 'Empresa B2B · Finanzas & Inversión · $1,230,000 LTV', category: 'Cuentas', targetNav: 'cuentas', badge: 'Empresa' },
-  { id: 'a-3', title: 'Logística Avanzada del Norte', subtitle: 'Empresa B2B · Transporte & Supply Chain', category: 'Cuentas', targetNav: 'cuentas', badge: 'Empresa' },
-  { id: 'a-4', title: 'BioSalud Farmacéutica', subtitle: 'Empresa B2B · Farmacia & Salud', category: 'Cuentas', targetNav: 'cuentas', badge: 'Empresa' },
-  { id: 'a-5', title: 'UrbanStyle Retail', subtitle: 'Empresa B2B · Retail Omnicanal', category: 'Cuentas', targetNav: 'cuentas', badge: 'Empresa' },
-
-  // Oportunidades
-  { id: 'o-1', title: 'Expansión Licencias Enterprise + IA', subtitle: '$450,000 MXN · InnovaTech Soluciones (80% prob.)', category: 'Oportunidades', targetNav: 'oportunidades', badge: 'Negociación' },
-  { id: 'o-2', title: 'Suite Integral de Automatización B2B', subtitle: '$680,000 MXN · Grupo Salinas (60% prob.)', category: 'Oportunidades', targetNav: 'oportunidades', badge: 'Propuesta' },
-  { id: 'o-3', title: 'Consultoría Supply Chain 4.0', subtitle: '$320,000 MXN · Logística Avanzada (35% prob.)', category: 'Oportunidades', targetNav: 'oportunidades', badge: 'Calificación' },
-  { id: 'o-4', title: 'Transformación Omnicanal Retail', subtitle: '$520,000 MXN · UrbanStyle Retail (60% prob.)', category: 'Oportunidades', targetNav: 'oportunidades', badge: 'Propuesta' },
-
-  // Actividades
-  { id: 'act-1', title: 'Demo Técnica y Alcance de Módulo IA', subtitle: 'Hoy 11:30 AM · Google Meet · Carlos Mendoza', category: 'Actividades', targetNav: 'actividades', badge: 'Reunión' },
-  { id: 'act-2', title: 'Llamada de seguimiento a propuesta', subtitle: 'Hoy 03:00 PM · Llamada · Mariana Silva', category: 'Actividades', targetNav: 'actividades', badge: 'Llamada' },
-  { id: 'act-3', title: 'Ajuste de cláusula confidencialidad y SLA', subtitle: 'Hoy 05:00 PM · Tarea Legal · Elena Morales', category: 'Actividades', targetNav: 'actividades', badge: 'Tarea' },
-];
+// Accent-insensitive normalization helper
+function normalizeText(text: string): string {
+  if (!text) return '';
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
 
 export const Header: React.FC<HeaderProps> = ({
   userName = 'Ana Gómez',
@@ -85,7 +72,9 @@ export const Header: React.FC<HeaderProps> = ({
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchCategoryFilter, setSearchCategoryFilter] = useState<'todos' | 'Contactos' | 'Cuentas' | 'Oportunidades' | 'Actividades'>('todos');
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Notifications State
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -159,17 +148,138 @@ export const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Filter Search Results
-  const searchResults = searchQuery.trim()
-    ? GLOBAL_SEARCH_ITEMS.filter((item) => {
-        const query = searchQuery.toLowerCase();
-        return (
-          item.title.toLowerCase().includes(query) ||
-          item.subtitle.toLowerCase().includes(query) ||
-          item.category.toLowerCase().includes(query)
-        );
-      })
-    : [];
+  // Keyboard shortcut Ctrl+K / Cmd+K to focus search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        setIsSearchOpen(true);
+      }
+      if (e.key === 'Escape') {
+        setIsSearchOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Build Comprehensive Search Index from all real CRM datasets
+  const allSearchIndex = useMemo<UniversalSearchItem[]>(() => {
+    const items: UniversalSearchItem[] = [];
+
+    // 1. Index Contactos
+    INITIAL_CONTACTS.forEach((contact) => {
+      const blob = normalizeText(
+        `${contact.fullName} ${contact.account} ${contact.role} ${contact.email} ${contact.primaryPhone} ${contact.tags?.join(' ')} ${contact.notes || ''}`
+      );
+      items.push({
+        id: `contact-${contact.id}`,
+        title: contact.fullName,
+        subtitle: `${contact.role} · ${contact.account}`,
+        extraInfo: `${contact.email} · ${contact.primaryPhone}`,
+        category: 'Contactos',
+        targetNav: 'contactos',
+        avatarOrIcon: contact.avatar,
+        badge: contact.status === 'active' ? 'Cliente Activo' : 'Prospecto',
+        searchableBlob: blob,
+      });
+    });
+
+    // 2. Index Cuentas
+    INITIAL_ACCOUNTS.forEach((account) => {
+      const contactsSummary = account.contacts?.map((c) => c.name).join(' ') || '';
+      const servicesSummary = account.services?.map((s) => s.name).join(' ') || '';
+      const blob = normalizeText(
+        `${account.name} ${account.industry} ${account.type} ${account.tier} ${account.city} ${account.email} ${account.phone} ${contactsSummary} ${servicesSummary} ${account.notes || ''}`
+      );
+      items.push({
+        id: `account-${account.id}`,
+        title: account.name,
+        subtitle: `${account.type === 'empresa' ? 'Empresa B2B' : 'Particular B2C'} · ${account.industry} · ${account.city}`,
+        extraInfo: `LTV: $${account.lifetimeRevenue.toLocaleString()} · ${account.tier}`,
+        category: 'Cuentas',
+        targetNav: 'cuentas',
+        avatarOrIcon: account.logo,
+        badge: account.tier,
+        searchableBlob: blob,
+      });
+    });
+
+    // 3. Index Oportunidades
+    INITIAL_DETAILED_OPPORTUNITIES.forEach((opp) => {
+      const blob = normalizeText(
+        `${opp.title} ${opp.company} ${opp.contactPerson} ${opp.serviceInterest} ${opp.dealType} ${opp.stage} ${opp.ownerName} ${opp.notes || ''}`
+      );
+      items.push({
+        id: `opp-${opp.id}`,
+        title: opp.title,
+        subtitle: `${opp.company} · Contacto: ${opp.contactPerson}`,
+        extraInfo: `${opp.amount} · ${opp.probability}% prob. · Responsable: ${opp.ownerName}`,
+        category: 'Oportunidades',
+        targetNav: 'oportunidades',
+        badge: opp.stage.toUpperCase(),
+        searchableBlob: blob,
+      });
+    });
+
+    // 4. Index Actividades
+    INITIAL_ACTIVITIES.forEach((act) => {
+      const blob = normalizeText(
+        `${act.title} ${act.accountName} ${act.contactName} ${act.type} ${act.location} ${act.assignedTo.name} ${act.description} ${act.tags.join(' ')}`
+      );
+      items.push({
+        id: `act-${act.id}`,
+        title: act.title,
+        subtitle: `${act.dueTime} · ${act.accountName} (${act.contactName})`,
+        extraInfo: `${act.location} · Resp: ${act.assignedTo.name}`,
+        category: 'Actividades',
+        targetNav: 'actividades',
+        badge: act.dueDate === '2026-10-17' ? 'Hoy' : act.dueDate,
+        searchableBlob: blob,
+      });
+    });
+
+    return items;
+  }, []);
+
+  // Multi-token intuitive search logic
+  const searchResults = useMemo(() => {
+    const rawQuery = searchQuery.trim();
+    if (!rawQuery) return [];
+
+    const normalizedQuery = normalizeText(rawQuery);
+    const queryTokens = normalizedQuery.split(/\s+/).filter(Boolean);
+
+    // Filter by tokens: each token must be matched in the item's searchable blob
+    const matched = allSearchIndex.filter((item) => {
+      // Category filter check
+      if (searchCategoryFilter !== 'todos' && item.category !== searchCategoryFilter) {
+        return false;
+      }
+
+      // Check if all tokens are present (intuitive multi-word matching)
+      // E.g. "carlos mendoza" matches if both "carlos" and "mendoza" exist anywhere in the contact/account info
+      return queryTokens.every((token) => item.searchableBlob.includes(token));
+    });
+
+    // Sort by relevance (exact title matches first)
+    return matched.sort((a, b) => {
+      const aTitleNorm = normalizeText(a.title);
+      const bTitleNorm = normalizeText(b.title);
+      const aStarts = aTitleNorm.startsWith(normalizedQuery);
+      const bStarts = bTitleNorm.startsWith(normalizedQuery);
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+      return 0;
+    });
+  }, [allSearchIndex, searchQuery, searchCategoryFilter]);
+
+  // Suggested Quick Items when query is empty
+  const suggestedItems = useMemo(() => {
+    return allSearchIndex.slice(0, 5);
+  }, [allSearchIndex]);
 
   const unreadCount = notifications.filter((n) => n.unread).length;
 
@@ -185,7 +295,7 @@ export const Header: React.FC<HeaderProps> = ({
     onNavigate?.(notif.targetNav);
   };
 
-  const handleSearchResultClick = (item: SearchResultItem) => {
+  const handleSearchResultClick = (item: UniversalSearchItem) => {
     setIsSearchOpen(false);
     setSearchQuery('');
     onNavigate?.(item.targetNav);
@@ -193,86 +303,254 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="h-12 bg-white border-b border-slate-200/90 px-5 flex items-center justify-between shrink-0 z-30 relative select-none">
-      {/* 1. Functional Global Search Bar */}
-      <div ref={searchContainerRef} className="relative w-80 md:w-96 max-w-md">
-        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-        <input
-          type="text"
-          value={searchQuery}
-          onFocus={() => setIsSearchOpen(true)}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setIsSearchOpen(true);
-          }}
-          placeholder="Buscar contactos, cuentas, oportunidades..."
-          className="w-full pl-9 pr-8 py-1.5 bg-slate-50/80 hover:bg-slate-100/70 focus:bg-white text-[11px] text-slate-800 placeholder-slate-400 rounded-lg border border-slate-200/80 focus:outline-none focus:ring-1 focus:ring-[#E11D48] transition-all"
-        />
-        {searchQuery && (
-          <button
-            onClick={() => {
-              setSearchQuery('');
-              setIsSearchOpen(false);
+      {/* 1. Ultra-Intuitive Omnibox Search Bar */}
+      <div ref={searchContainerRef} className="relative w-80 md:w-96 lg:w-[460px] max-w-lg">
+        <div className="relative flex items-center">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchQuery}
+            onFocus={() => setIsSearchOpen(true)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setIsSearchOpen(true);
             }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-          >
-            <X className="w-3 h-3" />
-          </button>
-        )}
+            placeholder="Buscar por nombre, cuenta, oportunidad, teléfono..."
+            className="w-full pl-9 pr-16 py-1.5 bg-slate-50/80 hover:bg-slate-100/70 focus:bg-white text-xs text-slate-800 placeholder-slate-400 rounded-xl border border-slate-200 focus:outline-none focus:border-[#E11D48] focus:ring-1 focus:ring-[#E11D48] transition-all"
+          />
 
-        {/* Search Results Dropdown */}
-        {isSearchOpen && searchQuery.trim().length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150 max-h-96 overflow-y-auto">
-            <div className="p-2 border-b border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              <span>Resultados encontrados ({searchResults.length})</span>
-              <span className="text-[#E11D48]">Katapult Omnibox</span>
+          {/* Quick Clear or Shortcut Pill */}
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  searchInputRef.current?.focus();
+                }}
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-200 cursor-pointer"
+                title="Limpiar búsqueda"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            ) : (
+              <span className="hidden sm:inline text-[9px] font-bold text-slate-400 bg-slate-200/70 px-1.5 py-0.5 rounded border border-slate-300/50">
+                ⌘K
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Intuitive Dropdown Search Palette */}
+        {isSearchOpen && (
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150 max-h-[480px] flex flex-col">
+            {/* Header & Category Filters */}
+            <div className="p-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto text-[11px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setSearchCategoryFilter('todos')}
+                  className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                    searchCategoryFilter === 'todos'
+                      ? 'bg-[#0A1128] text-white shadow-2xs'
+                      : 'text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Todos ({searchQuery.trim() ? searchResults.length : allSearchIndex.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSearchCategoryFilter('Contactos')}
+                  className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                    searchCategoryFilter === 'Contactos'
+                      ? 'bg-blue-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Contactos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSearchCategoryFilter('Cuentas')}
+                  className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                    searchCategoryFilter === 'Cuentas'
+                      ? 'bg-indigo-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Cuentas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSearchCategoryFilter('Oportunidades')}
+                  className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                    searchCategoryFilter === 'Oportunidades'
+                      ? 'bg-[#E11D48] text-white shadow-2xs'
+                      : 'text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Oportunidades
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSearchCategoryFilter('Actividades')}
+                  className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                    searchCategoryFilter === 'Actividades'
+                      ? 'bg-purple-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Actividades
+                </button>
+              </div>
+
+              <span className="text-[10px] font-bold text-slate-400 hidden sm:inline">
+                {searchQuery.trim() ? `${searchResults.length} coincidencias` : 'Sugerencias'}
+              </span>
             </div>
 
-            {searchResults.length > 0 ? (
-              <div className="py-1 divide-y divide-slate-50">
-                {searchResults.map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => handleSearchResultClick(item)}
-                    className="p-2.5 hover:bg-slate-50 flex items-center justify-between gap-2 cursor-pointer transition-colors"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
-                        {item.category === 'Contactos' && <Users className="w-3.5 h-3.5 text-blue-600" />}
-                        {item.category === 'Cuentas' && <Building2 className="w-3.5 h-3.5 text-indigo-600" />}
-                        {item.category === 'Oportunidades' && <Target className="w-3.5 h-3.5 text-[#E11D48]" />}
-                        {item.category === 'Actividades' && <Calendar className="w-3.5 h-3.5 text-purple-600" />}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-slate-900 truncate">
-                            {item.title}
-                          </span>
-                          {item.badge && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
-                              {item.badge}
+            {/* Results or Suggested List */}
+            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 text-xs">
+              {searchQuery.trim() ? (
+                searchResults.length > 0 ? (
+                  searchResults.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => handleSearchResultClick(item)}
+                      className="p-3 hover:bg-slate-50/80 flex items-center justify-between gap-3 cursor-pointer transition-colors group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {/* Avatar or Icon */}
+                        {item.avatarOrIcon ? (
+                          <img
+                            src={item.avatarOrIcon}
+                            alt={item.title}
+                            className="w-9 h-9 rounded-xl object-cover ring-1 ring-slate-200 shrink-0"
+                          />
+                        ) : (
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
+                              item.category === 'Contactos'
+                                ? 'bg-blue-50 text-blue-600 border-blue-100'
+                                : item.category === 'Cuentas'
+                                ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
+                                : item.category === 'Oportunidades'
+                                ? 'bg-rose-50 text-[#E11D48] border-rose-100'
+                                : 'bg-purple-50 text-purple-600 border-purple-100'
+                            }`}
+                          >
+                            {item.category === 'Contactos' && <Users className="w-4 h-4" />}
+                            {item.category === 'Cuentas' && <Building2 className="w-4 h-4" />}
+                            {item.category === 'Oportunidades' && <Target className="w-4 h-4" />}
+                            {item.category === 'Actividades' && <CalendarDays className="w-4 h-4" />}
+                          </div>
+                        )}
+
+                        {/* Title, Subtitle, and Extra Information */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-900 group-hover:text-[#E11D48] transition-colors truncate">
+                              {item.title}
                             </span>
+                            <span
+                              className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded border ${
+                                item.category === 'Contactos'
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                  : item.category === 'Cuentas'
+                                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                  : item.category === 'Oportunidades'
+                                  ? 'bg-rose-50 text-[#E11D48] border-rose-200'
+                                  : 'bg-purple-50 text-purple-700 border-purple-200'
+                              }`}
+                            >
+                              {item.category}
+                            </span>
+                            {item.badge && (
+                              <span className="text-[9px] font-medium text-slate-400 hidden sm:inline">
+                                • {item.badge}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+                            {item.subtitle}
+                          </p>
+                          {item.extraInfo && (
+                            <p className="text-[10px] text-slate-400 font-normal truncate mt-0.5">
+                              {item.extraInfo}
+                            </p>
                           )}
                         </div>
-                        <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                          {item.subtitle}
-                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400 group-hover:text-[#E11D48] shrink-0">
+                        <span className="hidden md:inline">Abrir</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
                       </div>
                     </div>
-
-                    <ArrowRight className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                  ))
+                ) : (
+                  <div className="p-8 text-center text-slate-400 text-xs">
+                    <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="font-bold text-slate-700">
+                      No se encontraron resultados para &quot;{searchQuery}&quot;
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
+                      Intenta buscar por parte del nombre, cuenta asociada, cargo, teléfono o correo.
+                    </p>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-6 text-center text-slate-400 text-xs">
-                No se encontraron coincidencias para &quot;{searchQuery}&quot;
-              </div>
-            )}
+                )
+              ) : (
+                /* Suggested quick items when no query is typed yet */
+                <div className="p-3">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    <Sparkles className="w-3 h-3 text-[#E11D48]" />
+                    <span>Registros destacados y frecuentes</span>
+                  </div>
+                  <div className="space-y-1">
+                    {suggestedItems.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => handleSearchResultClick(item)}
+                        className="p-2 rounded-xl hover:bg-slate-50 flex items-center justify-between gap-2 cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span
+                            className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                              item.category === 'Contactos'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-indigo-100 text-indigo-700'
+                            }`}
+                          >
+                            {item.category[0]}
+                          </span>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-slate-800 block truncate">
+                              {item.title}
+                            </span>
+                            <span className="text-[10px] text-slate-400 block truncate">
+                              {item.subtitle}
+                            </span>
+                          </div>
+                        </div>
+                        <ArrowRight className="w-3 h-3 text-slate-300" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer with Hint */}
+            <div className="p-2 bg-slate-50 border-t border-slate-100 text-[10px] text-slate-400 flex items-center justify-between shrink-0">
+              <span>Navega con un clic o presiona Enter</span>
+              <span className="font-mono">ESC para cerrar</span>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Right Actions: Notifications, Calendar & Profile (Apps button removed) */}
+      {/* Right Actions: Notifications, Calendar & Profile */}
       <div className="flex items-center gap-2">
         {/* 2. Programmed Notifications Popover */}
         <div ref={notifContainerRef} className="relative">
