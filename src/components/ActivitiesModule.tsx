@@ -27,16 +27,12 @@ import {
   X,
   MapPin,
   Flame,
-  BarChart3,
-  Sparkles,
-  RotateCcw,
   AlertTriangle
 } from 'lucide-react';
 import {
   Activity,
   ActivityType,
   ActivityPriority,
-  ActivityStatus,
   INITIAL_ACTIVITIES,
   ACTIVITY_TYPE_CONFIG,
   PRIORITY_CONFIG,
@@ -355,6 +351,219 @@ export const ActivitiesModule: React.FC<ActivitiesModuleProps> = ({
       default:
         return <CalendarIcon className={className} />;
     }
+  };
+
+  // Helper to render activity item card in agenda list
+  const renderActivityCard = (item: Activity, isOverdueAlert = false) => {
+    const typeConfig = ACTIVITY_TYPE_CONFIG[item.type];
+    const priorityConfig = PRIORITY_CONFIG[item.priority];
+    const isCompleted = item.status === 'completada';
+
+    return (
+      <div
+        key={item.id}
+        onClick={() => setSelectedActivity(item)}
+        className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-3 ${
+          isCompleted
+            ? 'bg-slate-50/70 border-slate-200 opacity-75'
+            : isOverdueAlert
+            ? 'bg-white border-rose-200 hover:border-rose-400 hover:shadow-xs'
+            : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs'
+        }`}
+      >
+        {/* Left: Checkbox + Type Icon + Title & Metadata */}
+        <div className="flex items-start gap-3 min-w-0 flex-1">
+          {/* Checkbox */}
+          <button
+            type="button"
+            onClick={(e) => handleToggleComplete(item.id, e)}
+            title={isCompleted ? 'Marcar como pendiente' : 'Marcar como completada'}
+            className={`w-5 h-5 mt-0.5 rounded-md border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
+              isCompleted
+                ? 'bg-emerald-600 border-emerald-600 text-white'
+                : 'border-slate-300 hover:border-[#E11D48] text-transparent hover:text-rose-200'
+            }`}
+          >
+            <Check className="w-3.5 h-3.5 stroke-[3]" />
+          </button>
+
+          {/* Type Badge Icon */}
+          <div
+            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${typeConfig.bg} ${typeConfig.text} ${typeConfig.border}`}
+            title={typeConfig.label}
+          >
+            {renderTypeIcon(item.type, 'w-4 h-4')}
+          </div>
+
+          {/* Title & Details */}
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3
+                className={`text-xs font-bold leading-tight ${
+                  isCompleted ? 'line-through text-slate-400' : 'text-slate-900'
+                }`}
+              >
+                {item.title}
+              </h3>
+
+              {/* Priority Pill */}
+              <span
+                className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border ${priorityConfig.badge}`}
+              >
+                {priorityConfig.label}
+              </span>
+
+              {/* Type Label */}
+              <span className="text-[10px] font-semibold text-slate-400">
+                • {typeConfig.label}
+              </span>
+            </div>
+
+            {/* Subtitle / Related Links */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-slate-500">
+              {/* Account Link */}
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigateToAccount?.(item.accountName);
+                }}
+                className="flex items-center gap-1 font-bold text-slate-700 hover:text-[#E11D48] transition-colors cursor-pointer"
+                title="Ir a cuenta"
+              >
+                <Building2 className="w-3 h-3 text-slate-400" />
+                <span>{item.accountName}</span>
+              </div>
+
+              {/* Contact */}
+              <div className="flex items-center gap-1 text-slate-500">
+                <User className="w-3 h-3 text-slate-400" />
+                <span>{item.contactName}</span>
+              </div>
+
+              {/* Opportunity if present */}
+              {item.opportunityTitle && (
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNavigateToOpportunities?.();
+                  }}
+                  className="flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-100 hover:bg-rose-100 transition-colors cursor-pointer"
+                  title="Ver en embudo de oportunidades"
+                >
+                  <Target className="w-3 h-3 text-[#E11D48]" />
+                  <span className="truncate max-w-[160px]">{item.opportunityTitle}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Description snippet or outcome notes */}
+            {isCompleted && item.outcomeNotes ? (
+              <p className="text-[11px] text-emerald-700 font-medium mt-1 bg-emerald-50/60 p-1.5 rounded-lg border border-emerald-100">
+                <strong>Resultado:</strong> {item.outcomeNotes}
+              </p>
+            ) : (
+              <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">
+                {item.description}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Right: Date, Time, Assigned User & Fast Sync Buttons */}
+        <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+          {/* Date & Time pill */}
+          <div className="text-right">
+            <div
+              className={`text-xs font-black flex items-center md:justify-end gap-1 ${
+                isOverdueAlert
+                  ? 'text-[#E11D48]'
+                  : item.dueDate === todayStr
+                  ? 'text-amber-800'
+                  : 'text-slate-700'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>{item.dueTime}</span>
+              <span className="text-[10px] font-normal text-slate-400">
+                ({item.durationMinutes}m)
+              </span>
+            </div>
+            <div className="text-[10px] font-semibold text-slate-400">
+              {item.dueDate === todayStr
+                ? 'Hoy'
+                : item.dueDate < todayStr
+                ? `Venció el ${item.dueDate}`
+                : item.dueDate}
+            </div>
+          </div>
+
+          {/* Owner Avatar */}
+          <div className="flex items-center gap-1.5">
+            <img
+              src={item.assignedTo.avatar}
+              alt={item.assignedTo.name}
+              className="w-7 h-7 rounded-full object-cover border border-slate-200"
+              title={`Asignado a: ${item.assignedTo.name} (${item.assignedTo.role})`}
+            />
+          </div>
+
+          {/* Fast Action Buttons */}
+          <div className="flex items-center gap-1">
+            {/* Meeting Direct Link (if exists) */}
+            {item.meetingLink && !isCompleted && (
+              <a
+                href={item.meetingLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="p-1.5 text-xs font-bold bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg border border-purple-200 transition-colors flex items-center gap-1"
+                title="Unirse a la videollamada"
+              >
+                <Video className="w-3 h-3" />
+                <span className="hidden xl:inline text-[10px]">Unirse</span>
+              </a>
+            )}
+
+            {/* Google Calendar Link */}
+            <a
+              href={generateGoogleCalendarUrl(item)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              title="Sincronizar con Google Calendar"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+
+            {/* .ICS Download */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                downloadActivityIcs(item);
+              }}
+              className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              title="Descargar archivo .ics para Outlook/Apple"
+            >
+              <Download className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Quick Reschedule if Overdue */}
+            {isOverdueAlert && (
+              <button
+                type="button"
+                onClick={(e) => handleRescheduleTomorrow(item.id, e)}
+                className="px-2 py-1 text-[10px] font-bold text-rose-700 bg-rose-100 hover:bg-rose-200 rounded-lg transition-colors cursor-pointer"
+                title="Reprogramar para mañana"
+              >
+                +24h
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -848,219 +1057,6 @@ export const ActivitiesModule: React.FC<ActivitiesModuleProps> = ({
           </div>
         )}
       </div>
-
-      {/* RENDER HELPER FOR ACTIVITY CARDS */}
-      {function renderActivityCard(item: Activity, isOverdueAlert = false) {
-        const typeConfig = ACTIVITY_TYPE_CONFIG[item.type];
-        const priorityConfig = PRIORITY_CONFIG[item.priority];
-        const isCompleted = item.status === 'completada';
-
-        return (
-          <div
-            key={item.id}
-            onClick={() => setSelectedActivity(item)}
-            className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-3 ${
-              isCompleted
-                ? 'bg-slate-50/70 border-slate-200 opacity-75'
-                : isOverdueAlert
-                ? 'bg-white border-rose-200 hover:border-rose-400 hover:shadow-xs'
-                : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs'
-            }`}
-          >
-            {/* Left: Checkbox + Type Icon + Title & Metadata */}
-            <div className="flex items-start gap-3 min-w-0 flex-1">
-              {/* Checkbox */}
-              <button
-                type="button"
-                onClick={(e) => handleToggleComplete(item.id, e)}
-                title={isCompleted ? 'Marcar como pendiente' : 'Marcar como completada'}
-                className={`w-5 h-5 mt-0.5 rounded-md border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
-                  isCompleted
-                    ? 'bg-emerald-600 border-emerald-600 text-white'
-                    : 'border-slate-300 hover:border-[#E11D48] text-transparent hover:text-rose-200'
-                }`}
-              >
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
-              </button>
-
-              {/* Type Badge Icon */}
-              <div
-                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${typeConfig.bg} ${typeConfig.text} ${typeConfig.border}`}
-                title={typeConfig.label}
-              >
-                {renderTypeIcon(item.type, 'w-4 h-4')}
-              </div>
-
-              {/* Title & Details */}
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3
-                    className={`text-xs font-bold leading-tight ${
-                      isCompleted ? 'line-through text-slate-400' : 'text-slate-900'
-                    }`}
-                  >
-                    {item.title}
-                  </h3>
-
-                  {/* Priority Pill */}
-                  <span
-                    className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border ${priorityConfig.badge}`}
-                  >
-                    {priorityConfig.label}
-                  </span>
-
-                  {/* Type Label */}
-                  <span className="text-[10px] font-semibold text-slate-400">
-                    • {typeConfig.label}
-                  </span>
-                </div>
-
-                {/* Subtitle / Related Links */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-slate-500">
-                  {/* Account Link */}
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onNavigateToAccount?.(item.accountName);
-                    }}
-                    className="flex items-center gap-1 font-bold text-slate-700 hover:text-[#E11D48] transition-colors cursor-pointer"
-                    title="Ir a cuenta"
-                  >
-                    <Building2 className="w-3 h-3 text-slate-400" />
-                    <span>{item.accountName}</span>
-                  </div>
-
-                  {/* Contact */}
-                  <div className="flex items-center gap-1 text-slate-500">
-                    <User className="w-3 h-3 text-slate-400" />
-                    <span>{item.contactName}</span>
-                  </div>
-
-                  {/* Opportunity if present */}
-                  {item.opportunityTitle && (
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onNavigateToOpportunities?.();
-                      }}
-                      className="flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-100 hover:bg-rose-100 transition-colors cursor-pointer"
-                      title="Ver en embudo de oportunidades"
-                    >
-                      <Target className="w-3 h-3 text-[#E11D48]" />
-                      <span className="truncate max-w-[160px]">{item.opportunityTitle}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Description snippet or outcome notes */}
-                {isCompleted && item.outcomeNotes ? (
-                  <p className="text-[11px] text-emerald-700 font-medium mt-1 bg-emerald-50/60 p-1.5 rounded-lg border border-emerald-100">
-                    <strong>Resultado:</strong> {item.outcomeNotes}
-                  </p>
-                ) : (
-                  <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">
-                    {item.description}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Right: Date, Time, Assigned User & Fast Sync Buttons */}
-            <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
-              {/* Date & Time pill */}
-              <div className="text-right">
-                <div
-                  className={`text-xs font-black flex items-center md:justify-end gap-1 ${
-                    isOverdueAlert
-                      ? 'text-[#E11D48]'
-                      : item.dueDate === todayStr
-                      ? 'text-amber-800'
-                      : 'text-slate-700'
-                  }`}
-                >
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>{item.dueTime}</span>
-                  <span className="text-[10px] font-normal text-slate-400">
-                    ({item.durationMinutes}m)
-                  </span>
-                </div>
-                <div className="text-[10px] font-semibold text-slate-400">
-                  {item.dueDate === todayStr
-                    ? 'Hoy'
-                    : item.dueDate < todayStr
-                    ? `Venció el ${item.dueDate}`
-                    : item.dueDate}
-                </div>
-              </div>
-
-              {/* Owner Avatar */}
-              <div className="flex items-center gap-1.5">
-                <img
-                  src={item.assignedTo.avatar}
-                  alt={item.assignedTo.name}
-                  className="w-7 h-7 rounded-full object-cover border border-slate-200"
-                  title={`Asignado a: ${item.assignedTo.name} (${item.assignedTo.role})`}
-                />
-              </div>
-
-              {/* Fast Action Buttons */}
-              <div className="flex items-center gap-1">
-                {/* Meeting Direct Link (if exists) */}
-                {item.meetingLink && !isCompleted && (
-                  <a
-                    href={item.meetingLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="p-1.5 text-xs font-bold bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg border border-purple-200 transition-colors flex items-center gap-1"
-                    title="Unirse a la videollamada"
-                  >
-                    <Video className="w-3 h-3" />
-                    <span className="hidden xl:inline text-[10px]">Unirse</span>
-                  </a>
-                )}
-
-                {/* Google Calendar Link */}
-                <a
-                  href={generateGoogleCalendarUrl(item)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                  title="Sincronizar con Google Calendar"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-
-                {/* .ICS Download */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    downloadActivityIcs(item);
-                  }}
-                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                  title="Descargar archivo .ics para Outlook/Apple"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                </button>
-
-                {/* Quick Reschedule if Overdue */}
-                {isOverdueAlert && (
-                  <button
-                    type="button"
-                    onClick={(e) => handleRescheduleTomorrow(item.id, e)}
-                    className="px-2 py-1 text-[10px] font-bold text-rose-700 bg-rose-100 hover:bg-rose-200 rounded-lg transition-colors cursor-pointer"
-                    title="Reprogramar para mañana"
-                  >
-                    +24h
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      }}
 
       {/* MODAL 1: INSPECTOR / DETALLE DE ACTIVIDAD */}
       {selectedActivity && (
@@ -1591,4 +1587,5 @@ export const ActivitiesModule: React.FC<ActivitiesModuleProps> = ({
     </div>
   );
 };
+
 export default ActivitiesModule;
