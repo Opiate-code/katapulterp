@@ -21,7 +21,9 @@ import {
   UserCheck,
   Building2,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Camera,
+  Upload
 } from 'lucide-react';
 import {
   INITIAL_USERS,
@@ -87,6 +89,28 @@ export const SettingsModule: React.FC = () => {
       prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
     );
     showSuccessBanner(`Rol asignado correctamente a ${newRole}`);
+  };
+
+  const handleAvatarUpload = (userId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor selecciona un archivo de imagen válido (PNG, JPG o WEBP).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, avatar: dataUrl } : u))
+        );
+        showSuccessBanner('Foto de perfil de usuario actualizada exitosamente');
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleCreateUser = (e: React.FormEvent) => {
@@ -301,11 +325,25 @@ export const SettingsModule: React.FC = () => {
                     <tr key={user.id} className="hover:bg-slate-50/70 transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
-                          <img
-                            src={user.avatar}
-                            alt={user.name}
-                            className="w-8 h-8 rounded-full object-cover border border-slate-200"
-                          />
+                          <label
+                            className="relative group cursor-pointer shrink-0"
+                            title="Haz clic para subir o cambiar foto de perfil"
+                          >
+                            <img
+                              src={user.avatar}
+                              alt={user.name}
+                              className="w-8 h-8 rounded-full object-cover border border-slate-200 group-hover:ring-2 group-hover:ring-[#E11D48] transition-all"
+                            />
+                            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Camera className="w-3.5 h-3.5 text-white" />
+                            </div>
+                            <input
+                              type="file"
+                              accept="image/png, image/jpeg, image/webp"
+                              className="hidden"
+                              onChange={(e) => handleAvatarUpload(user.id, e)}
+                            />
+                          </label>
                           <div>
                             <div className="font-bold text-slate-900 text-xs">{user.name}</div>
                             <span className="text-[10px] text-slate-400 font-mono">{user.id}</span>

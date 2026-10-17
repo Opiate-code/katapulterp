@@ -34,7 +34,8 @@ import {
   FileSpreadsheet,
   FileCheck,
   File,
-  Check
+  Check,
+  Camera
 } from 'lucide-react';
 import {
   Account,
@@ -222,6 +223,30 @@ export const AccountsModule: React.FC = () => {
       accountOwner: 'Ana Torres',
       notes: ''
     });
+  };
+
+  // Handle Account Logo / Profile Upload
+  const handleAccountLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedAccount) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor selecciona un archivo de imagen válido (PNG, JPG o WEBP).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setAccounts((prev) =>
+          prev.map((acc) =>
+            acc.id === selectedAccount.id ? { ...acc, logo: dataUrl } : acc
+          )
+        );
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   // Handle Add Contact to Account
@@ -622,11 +647,26 @@ export const AccountsModule: React.FC = () => {
             <div className="p-4 bg-slate-50/70 border-b border-slate-200/80 shrink-0">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <img
-                    src={selectedAccount.logo}
-                    alt={selectedAccount.name}
-                    className="w-13 h-13 rounded-2xl object-cover ring-2 ring-white shadow-xs shrink-0"
-                  />
+                  <label
+                    className="relative group cursor-pointer shrink-0"
+                    title="Haz clic para subir o cambiar logotipo de la cuenta"
+                  >
+                    <img
+                      src={selectedAccount.logo}
+                      alt={selectedAccount.name}
+                      className="w-13 h-13 rounded-2xl object-cover ring-2 ring-white shadow-xs group-hover:ring-[#E11D48] transition-all"
+                    />
+                    <div className="absolute inset-0 bg-black/45 rounded-2xl flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[9px] font-bold">
+                      <Camera className="w-4 h-4 mb-0.5" />
+                      <span>Cambiar</span>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/png, image/jpeg, image/webp"
+                      className="hidden"
+                      onChange={handleAccountLogoUpload}
+                    />
+                  </label>
                   <div>
                     <h2 className="text-sm font-black text-slate-900 leading-tight">
                       {selectedAccount.name}
