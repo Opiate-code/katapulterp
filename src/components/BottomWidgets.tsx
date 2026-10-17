@@ -5,8 +5,6 @@ import {
   CheckCircle2,
   MessageSquare,
   Building,
-  Sparkles,
-  ArrowRight,
   Globe,
   Share2,
   Users2,
@@ -43,7 +41,7 @@ export const BottomWidgets: React.FC = () => {
   let accumulatedPercent = 0;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
       {/* 1. Actividad reciente (Audit log) */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
         <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-4">
@@ -126,7 +124,7 @@ export const BottomWidgets: React.FC = () => {
 
           {/* Breakdown List */}
           <div className="flex-1 w-full space-y-2">
-            {LEAD_SOURCES.slice(0, 4).map((source) => {
+            {LEAD_SOURCES.map((source) => {
               const SourceIcon = sourceIcons[source.name] || Globe;
               return (
                 <div key={source.name} className="flex items-center justify-between text-xs">
@@ -147,39 +145,6 @@ export const BottomWidgets: React.FC = () => {
               );
             })}
           </div>
-        </div>
-      </div>
-
-      {/* 3. Promo card: "Impulsa tus resultados" */}
-      <div className="bg-gradient-to-br from-[#0A1128] via-[#111A3A] to-[#1E293B] rounded-2xl p-6 text-white shadow-md relative overflow-hidden flex flex-col justify-between">
-        {/* Background Decorative glow */}
-        <div className="absolute -top-12 -right-12 w-44 h-44 bg-[#E11D48]/20 rounded-full blur-2xl pointer-events-none"></div>
-        <div className="absolute -bottom-8 -left-8 w-36 h-36 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-        <div className="relative z-10">
-          <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center mb-4 border border-white/10 text-[#E11D48]">
-            <Sparkles className="w-5 h-5 text-rose-400" />
-          </div>
-
-          <span className="text-[11px] font-bold text-rose-400 tracking-wider uppercase">
-            Katapult AI Insights
-          </span>
-
-          <h3 className="text-base font-extrabold mt-1 text-white">
-            Impulsa tus resultados comerciales
-          </h3>
-
-          <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-            Detecta automáticamente oportunidades con alta probabilidad de cierre y automatiza el
-            seguimiento de tus prospectos en un clic.
-          </p>
-        </div>
-
-        <div className="relative z-10 pt-5">
-          <button className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-[#E11D48] hover:bg-[#BE123C] text-white font-bold text-xs rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer">
-            <span>Explorar automatizaciones</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
         </div>
       </div>
     </div>
