@@ -40,10 +40,24 @@ export interface OperationalRules {
   activityOverdueAlerts: boolean;
   requireTwoFactor: boolean;
   allowDataExport: boolean;
-  defaultCurrency: 'MXN' | 'USD';
-  timezone: string;
   companyName: string;
   primaryColor: string;
+  
+  // SLA & Asignación
+  leadSlaHours: number;
+  autoReassignUnattendedLeads: boolean;
+
+  // Prevención de Duplicados & Protección de Cartera
+  preventDuplicateLeads: boolean;
+  accountOwnershipLock: boolean;
+
+  // Gobernanza de Negociación y Cierre
+  requireLostReason: boolean;
+  discountApprovalThresholdPercent: number;
+
+  // Automatización y Alertas
+  notifyTeamOnDealWon: boolean;
+  autoCreateFollowUpTask: boolean;
 }
 
 export const INITIAL_USERS: SystemUser[] = [
@@ -174,8 +188,15 @@ export const INITIAL_OPERATIONAL_RULES: OperationalRules = {
   activityOverdueAlerts: true,
   requireTwoFactor: true,
   allowDataExport: true,
-  defaultCurrency: 'MXN',
-  timezone: 'America/Mexico_City (GMT-6)',
   companyName: 'Katapult Marketing Studio',
   primaryColor: '#E11D48',
+
+  leadSlaHours: 4,
+  autoReassignUnattendedLeads: true,
+  preventDuplicateLeads: true,
+  accountOwnershipLock: true,
+  requireLostReason: true,
+  discountApprovalThresholdPercent: 15,
+  notifyTeamOnDealWon: true,
+  autoCreateFollowUpTask: true,
 };

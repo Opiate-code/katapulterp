@@ -23,7 +23,12 @@ import {
   CheckCircle2,
   AlertCircle,
   Camera,
-  Upload
+  Upload,
+  Percent,
+  Trophy,
+  ShieldAlert,
+  FileText,
+  Timer
 } from 'lucide-react';
 import {
   INITIAL_USERS,
@@ -707,171 +712,335 @@ export const SettingsModule: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs max-w-7xl mx-auto space-y-5">
             <div>
               <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                Reglas Operativas y Parámetros Globales
+                Reglas Operativas y Gobernanza Comercial del ERP
               </h3>
               <p className="text-[11px] text-slate-500 font-medium">
-                Políticas de asignación automática de leads, moneda, seguridad y notificaciones.
+                Políticas de SLAs de prospección, blindaje de cartera, control de descuentos y automatización del embudo.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
-              {/* Rule Box 1: Asignación de Leads */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
+              {/* Rule Box 1: SLA de Primera Respuesta y Asignación */}
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
                 <div className="flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-blue-600" />
-                  <h4 className="text-xs font-bold text-slate-800">
-                    Método de Asignación Automática de Prospectos
-                  </h4>
+                  <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600">
+                    <Timer className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">
+                      SLA de Primera Respuesta & Asignación
+                    </h4>
+                    <p className="text-[10px] text-slate-500">
+                      Tiempo límite para que el comercial contacte a un nuevo prospecto.
+                    </p>
+                  </div>
                 </div>
-                <p className="text-[11px] text-slate-500">
-                  Determina a qué ejecutivo comercial se asignan los leads entrantes de la Landing Page y Meta Ads.
-                </p>
-                <div className="space-y-2 text-xs">
-                  <label className="flex items-center gap-2 font-medium text-slate-700 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="leadAssign"
-                      checked={rules.leadAssignmentMethod === 'round_robin'}
-                      onChange={() =>
-                        setRules({ ...rules, leadAssignmentMethod: 'round_robin' })
-                      }
-                      className="text-[#E11D48] focus:ring-[#E11D48]"
-                    />
-                    <span>Round-Robin Equitativo (Distribución uniforme entre comerciales)</span>
-                  </label>
-                  <label className="flex items-center gap-2 font-medium text-slate-700 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="leadAssign"
-                      checked={rules.leadAssignmentMethod === 'territory'}
-                      onChange={() =>
-                        setRules({ ...rules, leadAssignmentMethod: 'territory' })
-                      }
-                      className="text-[#E11D48] focus:ring-[#E11D48]"
-                    />
-                    <span>Por Territorio & Industria del Prospecto</span>
-                  </label>
-                  <label className="flex items-center gap-2 font-medium text-slate-700 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="leadAssign"
-                      checked={rules.leadAssignmentMethod === 'manual'}
-                      onChange={() =>
-                        setRules({ ...rules, leadAssignmentMethod: 'manual' })
-                      }
-                      className="text-[#E11D48] focus:ring-[#E11D48]"
-                    />
-                    <span>Asignación Manual por el Director Comercial</span>
-                  </label>
-                </div>
-              </div>
 
-              {/* Rule Box 2: Moneda y Zona Horaria */}
-              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-emerald-600" />
-                  <h4 className="text-xs font-bold text-slate-800">
-                    Moneda Principal y Zona Horaria
-                  </h4>
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  Moneda predeterminada para el cálculo de cartera y pipeline.
-                </p>
-                <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="space-y-2.5 text-xs pt-1">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 mb-1">
-                      Moneda Base
+                      Método de Asignación Automática:
                     </label>
                     <select
-                      value={rules.defaultCurrency}
+                      value={rules.leadAssignmentMethod}
                       onChange={(e) =>
-                        setRules({ ...rules, defaultCurrency: e.target.value as 'MXN' | 'USD' })
+                        setRules({
+                          ...rules,
+                          leadAssignmentMethod: e.target.value as 'round_robin' | 'territory' | 'manual',
+                        })
                       }
-                      className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E11D48]"
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E11D48]"
                     >
-                      <option value="MXN">MXN ($ Peso Mexicano)</option>
-                      <option value="USD">USD ($ Dólar Americano)</option>
+                      <option value="round_robin">Round-Robin Equitativo (Distribución balanceada)</option>
+                      <option value="territory">Por Territorio & Industria del Prospecto</option>
+                      <option value="manual">Asignación Manual por Director Comercial</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 mb-1">
-                      Zona Horaria
+                      Tiempo Máximo de Primera Atención (SLA Lead Caliente):
                     </label>
                     <select
-                      value={rules.timezone}
-                      onChange={(e) => setRules({ ...rules, timezone: e.target.value })}
-                      className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E11D48]"
+                      value={rules.leadSlaHours}
+                      onChange={(e) =>
+                        setRules({ ...rules, leadSlaHours: Number(e.target.value) })
+                      }
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E11D48]"
                     >
-                      <option value="America/Mexico_City (GMT-6)">Ciudad de México (GMT-6)</option>
-                      <option value="America/Monterrey (GMT-6)">Monterrey (GMT-6)</option>
-                      <option value="America/Bogota (GMT-5)">Bogotá (GMT-5)</option>
-                      <option value="America/New_York (GMT-4)">Nueva York (GMT-4)</option>
+                      <option value={1}>1 hora (Atención Inmediata VIP)</option>
+                      <option value={2}>2 horas (Alta prioridad)</option>
+                      <option value={4}>4 horas (Estándar recomendado)</option>
+                      <option value={8}>8 horas (Mismo día laboral)</option>
+                      <option value={24}>24 horas (Próximo día hábil)</option>
                     </select>
+                  </div>
+
+                  <label className="flex items-start gap-2 pt-1 font-medium text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rules.autoReassignUnattendedLeads}
+                      onChange={(e) =>
+                        setRules({ ...rules, autoReassignUnattendedLeads: e.target.checked })
+                      }
+                      className="mt-0.5 rounded text-[#E11D48] focus:ring-[#E11D48]"
+                    />
+                    <span className="text-[11px] leading-snug">
+                      <strong>Auto-reasignar lead al vencer SLA:</strong> Si el comercial no realiza el primer contacto a tiempo, transferir automáticamente al siguiente asesor disponible.
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Rule Box 2: Blindaje de Cartera & Prevención de Duplicados */}
+              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+                    <ShieldAlert className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">
+                      Blindaje de Cartera & Duplicados
+                    </h4>
+                    <p className="text-[10px] text-slate-500">
+                      Protección contra invasión de clientes y registros repetidos.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 text-xs pt-1">
+                  <label className="flex items-start gap-2 font-medium text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rules.preventDuplicateLeads}
+                      onChange={(e) =>
+                        setRules({ ...rules, preventDuplicateLeads: e.target.checked })
+                      }
+                      className="mt-0.5 rounded text-[#E11D48] focus:ring-[#E11D48]"
+                    />
+                    <span className="text-[11px] leading-snug">
+                      <strong>Detección inteligente de duplicados:</strong> Si un prospecto vuelve a registrarse con mismo correo o teléfono, vincular como nueva interacción a la cuenta existente sin duplicar registros.
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-2 font-medium text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rules.accountOwnershipLock}
+                      onChange={(e) =>
+                        setRules({ ...rules, accountOwnershipLock: e.target.checked })
+                      }
+                      className="mt-0.5 rounded text-[#E11D48] focus:ring-[#E11D48]"
+                    />
+                    <span className="text-[11px] leading-snug">
+                      <strong>Blindaje de cuentas asignadas (Account Lock):</strong> Impide que otros ejecutivos abran tratos o modifiquen cuentas con titular activo sin autorización del comercial asignado o Director.
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Rule Box 3: Gobernanza del Embudo Comercial & Descuentos */}
+              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-rose-50 text-[#E11D48]">
+                    <Percent className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">
+                      Gobernanza del Embudo & Descuentos
+                    </h4>
+                    <p className="text-[10px] text-slate-500">
+                      Disciplina en el pipeline comercial y aprobación de márgenes.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 text-xs pt-1">
+                  <label className="flex items-start gap-2 font-medium text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rules.requireLostReason}
+                      onChange={(e) =>
+                        setRules({ ...rules, requireLostReason: e.target.checked })
+                      }
+                      className="mt-0.5 rounded text-[#E11D48] focus:ring-[#E11D48]"
+                    />
+                    <span className="text-[11px] leading-snug">
+                      <strong>Motivo obligatorio al marcar 'Oportunidad Perdida':</strong> Exige documentar la causa (Precio, Competidor, Sin Presupuesto, etc.) para alimentar el panel analítico gerencial.
+                    </span>
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">
+                        Aprobación de Descuento:
+                      </label>
+                      <select
+                        value={rules.discountApprovalThresholdPercent}
+                        onChange={(e) =>
+                          setRules({
+                            ...rules,
+                            discountApprovalThresholdPercent: Number(e.target.value),
+                          })
+                        }
+                        className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E11D48]"
+                      >
+                        <option value={5}>Mayor al 5%</option>
+                        <option value={10}>Mayor al 10%</option>
+                        <option value={15}>Mayor al 15% (Recomendado)</option>
+                        <option value={20}>Mayor al 20%</option>
+                        <option value={25}>Mayor al 25%</option>
+                      </select>
+                      <span className="text-[9px] text-slate-400 block mt-0.5">
+                        Requiere visto bueno del Director Comercial.
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1">
+                        Auto-archivar Inactividad:
+                      </label>
+                      <select
+                        value={rules.dealAutoArchiveDays}
+                        onChange={(e) =>
+                          setRules({
+                            ...rules,
+                            dealAutoArchiveDays: Number(e.target.value),
+                          })
+                        }
+                        className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E11D48]"
+                      >
+                        <option value={30}>A los 30 días</option>
+                        <option value={60}>A los 60 días</option>
+                        <option value={90}>A los 90 días (Predeterminado)</option>
+                        <option value={180}>A los 180 días</option>
+                      </select>
+                      <span className="text-[9px] text-slate-400 block mt-0.5">
+                        Tratos fríos sin actividad registrada.
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Rule Box 3: Seguridad y 2FA */}
+              {/* Rule Box 4: Automatización de Alertas & Ritmo Comercial */}
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
                 <div className="flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-purple-600" />
-                  <h4 className="text-xs font-bold text-slate-800">Políticas de Seguridad</h4>
+                  <div className="p-1.5 rounded-lg bg-amber-50 text-amber-600">
+                    <Trophy className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">
+                      Automatización & Alertas de Ritmo
+                    </h4>
+                    <p className="text-[10px] text-slate-500">
+                      Triggers automáticos para mantener caliente el flujo de ventas.
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-2 text-xs">
-                  <label className="flex items-center gap-2 font-medium text-slate-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={rules.requireTwoFactor}
-                      onChange={(e) =>
-                        setRules({ ...rules, requireTwoFactor: e.target.checked })
-                      }
-                      className="rounded text-[#E11D48] focus:ring-[#E11D48]"
-                    />
-                    <span>Exigir Autenticación de Dos Pasos (2FA) a todos los usuarios</span>
-                  </label>
-                  <label className="flex items-center gap-2 font-medium text-slate-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={rules.allowDataExport}
-                      onChange={(e) =>
-                        setRules({ ...rules, allowDataExport: e.target.checked })
-                      }
-                      className="rounded text-[#E11D48] focus:ring-[#E11D48]"
-                    />
-                    <span>Habilitar exportación de base de datos a administradores</span>
-                  </label>
-                </div>
-              </div>
 
-              {/* Rule Box 4: Alertas de Vencimiento */}
-              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Bell className="w-4 h-4 text-amber-600" />
-                  <h4 className="text-xs font-bold text-slate-800">Alertas y Notificaciones</h4>
-                </div>
-                <div className="space-y-2 text-xs">
-                  <label className="flex items-center gap-2 font-medium text-slate-700 cursor-pointer">
+                <div className="space-y-2.5 text-xs pt-1">
+                  <label className="flex items-start gap-2 font-medium text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rules.notifyTeamOnDealWon}
+                      onChange={(e) =>
+                        setRules({ ...rules, notifyTeamOnDealWon: e.target.checked })
+                      }
+                      className="mt-0.5 rounded text-[#E11D48] focus:ring-[#E11D48]"
+                    />
+                    <span className="text-[11px] leading-snug">
+                      <strong>Notificación de Trato Ganado:</strong> Enviar felicitación en tiempo real y campana de éxito a todo el equipo al ganar un contrato.
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-2 font-medium text-slate-700 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={rules.activityOverdueAlerts}
                       onChange={(e) =>
                         setRules({ ...rules, activityOverdueAlerts: e.target.checked })
                       }
-                      className="rounded text-[#E11D48] focus:ring-[#E11D48]"
+                      className="mt-0.5 rounded text-[#E11D48] focus:ring-[#E11D48]"
                     />
-                    <span>Alertar actividades vencidas y negociaciones estancadas (+7 días)</span>
+                    <span className="text-[11px] leading-snug">
+                      <strong>Alerta de actividades vencidas & estancamiento:</strong> Notificar al asesor cuando un trato en propuesta o negociación supere 7 días sin nueva cita o tarea.
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-2 font-medium text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rules.autoCreateFollowUpTask}
+                      onChange={(e) =>
+                        setRules({ ...rules, autoCreateFollowUpTask: e.target.checked })
+                      }
+                      className="mt-0.5 rounded text-[#E11D48] focus:ring-[#E11D48]"
+                    />
+                    <span className="text-[11px] leading-snug">
+                      <strong>Seguimiento post-reunión automático:</strong> Generar tarea de seguimiento programada a las 24 horas de concluir cualquier cita comercial con un cliente.
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Rule Box 5: Seguridad Corporativa & Exportaciones */}
+              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3 md:col-span-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-purple-50 text-purple-600">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">
+                      Políticas de Seguridad & Protección de Datos
+                    </h4>
+                    <p className="text-[10px] text-slate-500">
+                      Estándares de acceso, doble factor y descarga masiva de carteras.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                  <label className="flex items-start gap-2 font-medium text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rules.requireTwoFactor}
+                      onChange={(e) =>
+                        setRules({ ...rules, requireTwoFactor: e.target.checked })
+                      }
+                      className="mt-0.5 rounded text-[#E11D48] focus:ring-[#E11D48]"
+                    />
+                    <span className="text-[11px] leading-snug">
+                      <strong>Exigir Doble Factor (2FA):</strong> Obligatorio para todos los roles con acceso a datos sensibles y cotizaciones.
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-2 font-medium text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rules.allowDataExport}
+                      onChange={(e) =>
+                        setRules({ ...rules, allowDataExport: e.target.checked })
+                      }
+                      className="mt-0.5 rounded text-[#E11D48] focus:ring-[#E11D48]"
+                    />
+                    <span className="text-[11px] leading-snug">
+                      <strong>Permitir exportación masiva de datos (CSV/PDF):</strong> Restringido exclusivamente al Super Admin y Director Comercial.
+                    </span>
                   </label>
                 </div>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex justify-end">
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[11px] text-slate-400 font-medium">
+                Las políticas operativas aplican en tiempo real sobre todos los usuarios activos.
+              </span>
               <button
-                onClick={() => showSuccessBanner('Reglas operativas guardadas exitosamente')}
+                onClick={() => showSuccessBanner('Reglas operativas y políticas comerciales guardadas exitosamente')}
                 className="px-4 py-2 bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
               >
-                Guardar Cambios Operativos
+                Guardar Reglas Operativas
               </button>
             </div>
           </div>
