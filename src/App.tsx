@@ -9,6 +9,7 @@ import { ContactsModule } from './components/ContactsModule';
 import { AccountsModule } from './components/AccountsModule';
 import { OpportunitiesModule } from './components/OpportunitiesModule';
 import { ActivitiesModule } from './components/ActivitiesModule';
+import { ReportsModule } from './components/ReportsModule';
 import { Menu, X, ArrowLeft, Construction } from 'lucide-react';
 
 export function App() {
@@ -106,12 +107,16 @@ export function App() {
           />
         )}
 
+        {/* Reports Module View */}
+        {activeNav === 'reportes' && <ReportsModule />}
+
         {/* Modules in Queue / Work In Progress Placeholders */}
         {activeNav !== 'inicio' &&
           activeNav !== 'contactos' &&
           activeNav !== 'cuentas' &&
           activeNav !== 'oportunidades' &&
-          activeNav !== 'actividades' && (
+          activeNav !== 'actividades' &&
+          activeNav !== 'reportes' && (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50/50">
             <div className="w-14 h-14 rounded-2xl bg-rose-50 text-[#E11D48] flex items-center justify-center mb-3">
               <Construction className="w-7 h-7" />
