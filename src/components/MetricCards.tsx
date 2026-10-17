@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Building2, Target, DollarSign, ArrowUpRight } from 'lucide-react';
+import { Users, Building2, Target, DollarSign, ArrowUp, ChevronRight } from 'lucide-react';
 import { METRICS_DATA, MetricItem } from '../data/crmData';
 
 const iconMap: Record<string, React.FC<{ className?: string }>> = {
@@ -11,38 +11,40 @@ const iconMap: Record<string, React.FC<{ className?: string }>> = {
 
 export const MetricCards: React.FC = () => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 shrink-0">
       {METRICS_DATA.map((metric: MetricItem) => {
         const IconComponent = iconMap[metric.icon] || Users;
 
         return (
           <div
             key={metric.id}
-            className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all group"
+            className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between"
           >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold text-slate-500">{metric.title}</span>
+            <div className="flex items-center justify-between mb-1.5">
               <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 ${metric.color}`}
+                className={`w-7 h-7 rounded-lg flex items-center justify-center ${metric.color}`}
               >
-                <IconComponent className="w-4 h-4" />
+                <IconComponent className="w-3.5 h-3.5" />
               </div>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
             </div>
 
-            <div className="flex items-baseline justify-between mt-1">
-              <div className="text-2xl font-black text-slate-900 tracking-tight">
+            <div className="space-y-0.5">
+              <span className="text-[11px] font-medium text-slate-500 block truncate">
+                {metric.title}
+              </span>
+              <div className="text-xl font-black text-slate-900 tracking-tight leading-tight">
                 {metric.value}
               </div>
-
-              <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                <ArrowUpRight className="w-3 h-3 stroke-[2.5]" />
-                <span>+{metric.change}</span>
-              </div>
             </div>
 
-            <p className="text-[11px] text-slate-400 mt-2 font-medium">
-              vs. mes anterior
-            </p>
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-2 font-medium">
+              <span className="text-emerald-600 font-bold flex items-center">
+                <ArrowUp className="w-3 h-3 stroke-[2.5]" />
+                {metric.change}
+              </span>
+              <span>vs. mes anterior</span>
+            </div>
           </div>
         );
       })}
