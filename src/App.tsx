@@ -6,6 +6,7 @@ import { PipelineKanban } from './components/PipelineKanban';
 import { RightSidebarWidgets } from './components/RightSidebarWidgets';
 import { BottomWidgets } from './components/BottomWidgets';
 import { ContactsModule } from './components/ContactsModule';
+import { AccountsModule } from './components/AccountsModule';
 import { Menu, X, ArrowLeft, Construction } from 'lucide-react';
 
 export function App() {
@@ -87,8 +88,11 @@ export function App() {
         {/* Contacts Module View */}
         {activeNav === 'contactos' && <ContactsModule />}
 
+        {/* Accounts Module View */}
+        {activeNav === 'cuentas' && <AccountsModule />}
+
         {/* Modules in Queue / Work In Progress Placeholders */}
-        {activeNav !== 'inicio' && activeNav !== 'contactos' && (
+        {activeNav !== 'inicio' && activeNav !== 'contactos' && activeNav !== 'cuentas' && (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50/50">
             <div className="w-14 h-14 rounded-2xl bg-rose-50 text-[#E11D48] flex items-center justify-center mb-3">
               <Construction className="w-7 h-7" />
