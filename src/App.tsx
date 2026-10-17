@@ -5,7 +5,8 @@ import { MetricCards } from './components/MetricCards';
 import { PipelineKanban } from './components/PipelineKanban';
 import { RightSidebarWidgets } from './components/RightSidebarWidgets';
 import { BottomWidgets } from './components/BottomWidgets';
-import { Menu, X } from 'lucide-react';
+import { ContactsModule } from './components/ContactsModule';
+import { Menu, X, ArrowLeft, Construction } from 'lucide-react';
 
 export function App() {
   const [activeNav, setActiveNav] = useState('inicio');
@@ -51,35 +52,69 @@ export function App() {
           <span className="text-xs font-bold text-slate-700">Katapult CRM</span>
         </div>
 
-        {/* Dashboard Single Viewport Body */}
-        <main className="flex-1 p-3.5 flex flex-col xl:flex-row gap-3 min-h-0 overflow-y-auto xl:overflow-hidden">
-          {/* Left/Center Section (~75%) */}
-          <section className="flex-1 flex flex-col justify-between gap-2.5 min-h-0 min-w-0">
-            {/* Welcome Greeting */}
-            <div className="shrink-0">
-              <h1 className="text-lg font-black text-slate-900 tracking-tight leading-tight">
-                Buenos días, Ana
-              </h1>
-              <p className="text-[11px] text-slate-500 font-medium">
-                Aquí tienes un resumen de lo más importante de tu negocio.
-              </p>
+        {/* Dynamic Route View */}
+        {activeNav === 'inicio' && (
+          <main className="flex-1 p-3.5 flex flex-col xl:flex-row gap-3 min-h-0 overflow-y-auto xl:overflow-hidden">
+            {/* Left/Center Section (~75%) */}
+            <section className="flex-1 flex flex-col justify-between gap-2.5 min-h-0 min-w-0">
+              {/* Welcome Greeting */}
+              <div className="shrink-0">
+                <h1 className="text-lg font-black text-slate-900 tracking-tight leading-tight">
+                  Buenos días, Ana
+                </h1>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Aquí tienes un resumen de lo más importante de tu negocio.
+                </p>
+              </div>
+
+              {/* Metric Cards Row */}
+              <MetricCards />
+
+              {/* Pipeline Kanban */}
+              <PipelineKanban />
+
+              {/* Bottom Widgets: Actividad reciente + Resumen por fuente */}
+              <BottomWidgets />
+            </section>
+
+            {/* Right Section (~25% width) */}
+            <aside className="w-full xl:w-72 2xl:w-80 shrink-0 h-full min-h-0 flex flex-col">
+              <RightSidebarWidgets />
+            </aside>
+          </main>
+        )}
+
+        {/* Contacts Module View */}
+        {activeNav === 'contactos' && <ContactsModule />}
+
+        {/* Modules in Queue / Work In Progress Placeholders */}
+        {activeNav !== 'inicio' && activeNav !== 'contactos' && (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50/50">
+            <div className="w-14 h-14 rounded-2xl bg-rose-50 text-[#E11D48] flex items-center justify-center mb-3">
+              <Construction className="w-7 h-7" />
             </div>
-
-            {/* Metric Cards Row */}
-            <MetricCards />
-
-            {/* Pipeline Kanban */}
-            <PipelineKanban />
-
-            {/* Bottom Widgets: Actividad reciente + Resumen por fuente */}
-            <BottomWidgets />
-          </section>
-
-          {/* Right Section (~25% width) */}
-          <aside className="w-full xl:w-72 2xl:w-80 shrink-0 h-full min-h-0 flex flex-col">
-            <RightSidebarWidgets />
-          </aside>
-        </main>
+            <h2 className="text-base font-extrabold text-slate-900 capitalize">
+              Módulo de {activeNav}
+            </h2>
+            <p className="text-xs text-slate-400 max-w-sm mt-1">
+              Próximo módulo en la secuencia de desarrollo de Katapult Marketing Studio.
+            </p>
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => setActiveNav('contactos')}
+                className="px-3.5 py-1.5 bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs transition-colors"
+              >
+                Ver Módulo de Contactos
+              </button>
+              <button
+                onClick={() => setActiveNav('inicio')}
+                className="px-3.5 py-1.5 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-50 cursor-pointer"
+              >
+                Volver al Inicio
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
